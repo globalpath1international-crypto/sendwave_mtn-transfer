@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sendwave — Money Sent</title>
+  <style>
+    :root {
+      --sw-yellow: #FFEC00;
+      --sw-brown: #3C0F19;
+      --sw-brown-soft: #5C2A35;
+      --sw-blue: #16889B;
+      --sw-bg: #FAF8F5;
+      --sw-white: #FFFFFF;
+      --sw-text: #1A0A0E;
+      --sw-muted: #8A7078;
+      --sw-border: #EDE5E0;
+      --sw-success: #16A34A;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--sw-bg);
+      color: var(--sw-text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .phone {
+      width: 100%;
+      max-width: 440px;
+      background: var(--sw-white);
+      border-radius: 28px;
+      box-shadow: 0 24px 70px -16px rgba(60,15,25,0.22), 0 6px 20px rgba(60,15,25,0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 700px;
+    }
+    .topbar {
+      background: var(--sw-yellow);
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(60,15,25,0.08);
+    }
+    .back-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(60,15,25,0.06);
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--sw-brown);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .back-btn:hover { background: rgba(60,15,25,0.12); }
+    .back-btn svg { width: 18px; height: 18px; }
+    .brand { display: flex; align-items: center; gap: 9px; flex: 1; }
+    .brand-wordmark {
+      color: var(--sw-brown);
+      font-weight: 800;
+      font-size: 21px;
+      letter-spacing: -0.9px;
+      line-height: 1;
+    }
+    .help-btn {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sw-brown);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .help-btn:hover { background: rgba(60,15,25,0.08); }
+    .screen {
+      flex: 1;
+      padding: 30px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .status-block { text-align: center; }
+    .status-icon {
+      width: 70px; height: 70px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: rgba(22,163,74,0.09);
+      color: var(--sw-success);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .status-icon::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(22,163,74,0.12);
+    }
+    .status-icon svg { width: 32px; height: 32px; }
+    .status-block h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      color: var(--sw-text);
+    }
+    .status-block .sub { margin-top: 5px; }
+    .muted { color: var(--sw-muted); font-size: 13px; }
+    .amount-block {
+      text-align: center;
+      background: linear-gradient(155deg, var(--sw-yellow) 0%, #FFE940 100%);
+      border-radius: 22px;
+      padding: 28px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .amount-block::before {
+      content: "";
+      position: absolute;
+      top: -35px; right: -35px;
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+    }
+    .amount-block::after {
+      content: "";
+      position: absolute;
+      bottom: -45px; left: -25px;
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: rgba(60,15,25,0.05);
+    }
+    .amount-label {
+      display: block;
+      font-size: 11px;
+      color: var(--sw-brown);
+      margin-bottom: 7px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      opacity: 0.7;
+      position: relative;
+      z-index: 1;
+    }
+    .amount-value {
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--sw-brown);
+      letter-spacing: -2px;
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      align-items: baseline;
+      position: relative;
+      z-index: 1;
+      line-height: 1;
+    }
+    .amount-value #currencyText {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--sw-brown-soft);
+      letter-spacing: 0.5px;
+    }
+    .details-block {
+      border: 1px solid var(--sw-border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--sw-white);
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--sw-border);
+      font-size: 13.5px;
+      gap: 12px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row .label {
+      color: var(--sw-muted);
+      font-weight: 500;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .detail-row .value {
+      font-weight: 700;
+      color: var(--sw-text);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+    .detail-row .value.accent { color: var(--sw-blue); }
+    .sender-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #FFFDF8;
+      border-radius: 16px;
+      border: 1px solid var(--sw-border);
+    }
+    .avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--sw-brown);
+      color: var(--sw-yellow);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px;
+      flex-shrink: 0;
+      letter-spacing: -0.5px;
+    }
+    .sender-info { flex: 1; min-width: 0; }
+    .sender-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--sw-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 4px;
+    }
+    .sender-name {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--sw-text);
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sender-meta { font-size: 12px; color: var(--sw-muted); margin-top: 3px; }
+    .footer {
+      padding: 18px 24px 26px;
+      border-top: 1px solid var(--sw-border);
+      background: var(--sw-white);
+    }
+    .btn-accept {
+      width: 100%;
+      padding: 17px;
+      background: var(--sw-brown);
+      color: var(--sw-yellow);
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+      box-shadow: 0 6px 18px rgba(60,15,25,0.2);
+    }
+    .btn-accept:hover  { background: #2E0A12; }
+    .btn-accept:active { transform: scale(0.985); }
+    .secure-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--sw-muted);
+      margin-top: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+    .secure-note svg { width: 12px; height: 12px; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="topbar">
+      <button class="back-btn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div class="brand">
+        <span class="brand-wordmark">sendwave〰</span>
+      </div>
+      <button class="help-btn">Help</button>
+    </header>
+
+    <main class="screen">
+      <div class="status-block">
+        <div class="status-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h1 id="statusText">Money Sent</h1>
+        <p class="muted sub" id="referenceText">Ref: SW-2849163</p>
+      </div>
+
+      <div class="amount-block">
+        <span class="amount-label">Amount Received</span>
+        <div class="amount-value">
+          <span id="currencyText">USD</span>
+          <span id="amountText">250.00</span>
+        </div>
+      </div>
+
+      <div class="sender-card">
+        <div class="avatar" id="avatarInitial">J</div>
+        <div class="sender-info">
+          <div class="sender-label">Sent from</div>
+          <div class="sender-name" id="senderNameText">John Doe</div>
+          <div class="sender-meta" id="senderMetaText">United States</div>
+        </div>
+      </div>
+
+      <div class="details-block">
+        <div class="detail-row">
+          <span class="label">Purpose</span>
+          <span class="value" id="purposeText">Family Support</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Request ID</span>
+          <span class="value accent" id="requestIdText">REQ-8829104</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Transfer Method</span>
+          <span class="value" id="methodText">Mobile Money</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Date</span>
+          <span class="value" id="dateText">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Reference</span>
+          <span class="value" id="refDetailText">—</span>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <button class="btn-accept" id="acceptBtn">Accept Payment</button>
+      <div class="secure-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Secured by Sendwave · 256-bit encryption
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function render(s) {
+      if (!s) return;
+      if (s.status)         document.getElementById('statusText').textContent = s.status;
+      if (s.currency)       document.getElementById('currencyText').textContent = s.currency;
+      if (s.amount != null) document.getElementById('amountText').textContent =
+        Number(s.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (s.senderName) {
+        document.getElementById('senderNameText').textContent = s.senderName;
+        document.getElementById('avatarInitial').textContent = s.senderName.trim().charAt(0).toUpperCase();
+      }
+      if (s.senderCountry) document.getElementById('senderMetaText').textContent = s.senderCountry;
+      if (s.purpose)       document.getElementById('purposeText').textContent = s.purpose;
+      if (s.requestId)     document.getElementById('requestIdText').textContent = s.requestId;
+      if (s.method)        document.getElementById('methodText').textContent = s.method;
+      if (s.reference) {
+        document.getElementById('referenceText').textContent = 'Ref: ' + s.reference;
+        document.getElementById('refDetailText').textContent = s.reference;
+      }
+      const dateSource = s.createdAt || new Date().toISOString();
+      document.getElementById('dateText').textContent =
+        new Date(dateSource).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Initial load
+    fetch('/api/state').then(r => r.json()).then(render).catch(() => {
+      document.getElementById('dateText').textContent =
+        new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    });
+
+    // Real-time stream
+    const evt = new EventSource('/api/stream');
+    evt.onmessage = (e) => {
+      try { render(JSON.parse(e.data)); } catch (err) {}
+    };
+
+    document.getElementById('acceptBtn').addEventListener('click', () => {
+      sessionStorage.setItem('paymentAccepted', 'true');
+      window.location.href = 'accept.html';
+    });
+  </script>
+</body>
+</html>
