@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Sendwave — Money Sent</title>
   <style>
     :root {
@@ -17,46 +17,55 @@
       --sw-border: #EDE5E0;
       --sw-success: #16A34A;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
+    html, body {
+      height: 100%;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--sw-bg);
-      color: var(--sw-text);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 24px 16px;
       -webkit-font-smoothing: antialiased;
     }
-
+    body {
+      background: var(--sw-bg);
+      color: var(--sw-text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
     .phone {
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
+      height: 100%;
+      max-height: 740px;
       background: var(--sw-white);
-      border-radius: 28px;
+      border-radius: 26px;
       box-shadow: 0 24px 70px -16px rgba(60,15,25,0.22), 0 6px 20px rgba(60,15,25,0.06);
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-height: 700px;
     }
 
-    /* ============ HEADER — realistic app bar ============ */
+    /* HEADER */
     .topbar {
       background: var(--sw-yellow);
-      padding: 16px 20px 14px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       gap: 12px;
-      position: relative;
+      flex-shrink: 0;
       border-bottom: 1px solid rgba(60,15,25,0.08);
+      position: relative;
     }
-
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sw-brown) 0%, var(--sw-brown) 30%, transparent 30%);
+      opacity: 0.85;
+    }
     .back-btn {
-      width: 34px; height: 34px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       background: rgba(60,15,25,0.06);
       border: none;
@@ -66,34 +75,18 @@
       flex-shrink: 0;
       transition: background 0.15s;
     }
-
     .back-btn:hover { background: rgba(60,15,25,0.12); }
     .back-btn svg { width: 18px; height: 18px; }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      flex: 1;
-    }
-
+    .brand { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
     .brand-wordmark {
       color: var(--sw-brown);
       font-weight: 800;
-      font-size: 21px;
+      font-size: 20px;
       letter-spacing: -0.9px;
       line-height: 1;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
-    .brand-wordmark .wave {
-      display: inline-block;
-      transform: translateY(1px);
-      margin-left: 1px;
-    }
-
     .help-btn {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--sw-brown);
       background: transparent;
@@ -102,85 +95,77 @@
       padding: 6px 8px;
       border-radius: 8px;
       transition: background 0.15s;
+      flex-shrink: 0;
     }
-
     .help-btn:hover { background: rgba(60,15,25,0.08); }
+    .header-spacer { width: 32px; flex-shrink: 0; }
 
-    /* ============ BODY ============ */
+    /* CONTENT */
     .screen {
       flex: 1;
-      padding: 30px 24px 20px;
+      padding: 20px 22px 0;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 14px;
+      min-height: 0;
     }
-
-    .status-block { text-align: center; }
-
+    .status-block { text-align: center; flex-shrink: 0; }
     .status-icon {
-      width: 70px; height: 70px;
-      margin: 0 auto 16px;
+      width: 58px; height: 58px;
+      margin: 0 auto 12px;
       border-radius: 50%;
       background: rgba(22,163,74,0.09);
       color: var(--sw-success);
       display: flex; align-items: center; justify-content: center;
       position: relative;
     }
-
     .status-icon::before {
       content: "";
       position: absolute;
-      inset: -8px;
+      inset: -7px;
       border-radius: 50%;
       border: 2px solid rgba(22,163,74,0.12);
     }
-
-    .status-icon svg { width: 32px; height: 32px; }
-
+    .status-icon svg { width: 26px; height: 26px; }
     .status-block h1 {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 800;
-      letter-spacing: -0.6px;
+      letter-spacing: -0.5px;
       color: var(--sw-text);
     }
+    .status-block .sub { margin-top: 4px; font-size: 12px; }
+    .muted { color: var(--sw-muted); font-size: 12px; }
 
-    .status-block .sub { margin-top: 5px; }
-
-    .muted { color: var(--sw-muted); font-size: 13px; }
-
-    /* Amount Card */
     .amount-block {
       text-align: center;
       background: linear-gradient(155deg, var(--sw-yellow) 0%, #FFE940 100%);
-      border-radius: 22px;
-      padding: 28px 22px;
+      border-radius: 18px;
+      padding: 20px 18px;
       position: relative;
       overflow: hidden;
+      flex-shrink: 0;
     }
-
     .amount-block::before {
       content: "";
       position: absolute;
-      top: -35px; right: -35px;
-      width: 130px; height: 130px;
+      top: -30px; right: -30px;
+      width: 110px; height: 110px;
       border-radius: 50%;
       background: rgba(255,255,255,0.22);
     }
-
     .amount-block::after {
       content: "";
       position: absolute;
-      bottom: -45px; left: -25px;
-      width: 110px; height: 110px;
+      bottom: -40px; left: -25px;
+      width: 90px; height: 90px;
       border-radius: 50%;
       background: rgba(60,15,25,0.05);
     }
-
     .amount-label {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
       color: var(--sw-brown);
-      margin-bottom: 7px;
+      margin-bottom: 6px;
       font-weight: 800;
       letter-spacing: 1.2px;
       text-transform: uppercase;
@@ -188,55 +173,49 @@
       position: relative;
       z-index: 1;
     }
-
     .amount-value {
-      font-size: 42px;
+      font-size: 34px;
       font-weight: 900;
       color: var(--sw-brown);
-      letter-spacing: -2px;
+      letter-spacing: -1.8px;
       display: flex;
       justify-content: center;
-      gap: 7px;
+      gap: 6px;
       align-items: baseline;
       position: relative;
       z-index: 1;
       line-height: 1;
     }
-
     .amount-value #currencyText {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 800;
       color: var(--sw-brown-soft);
       letter-spacing: 0.5px;
     }
 
-    /* Details Table */
     .details-block {
       border: 1px solid var(--sw-border);
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
       background: var(--sw-white);
+      flex-shrink: 0;
     }
-
     .detail-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 13px 18px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--sw-border);
-      font-size: 13.5px;
+      font-size: 13px;
       gap: 12px;
     }
-
     .detail-row:last-child { border-bottom: none; }
-
     .detail-row .label {
       color: var(--sw-muted);
       font-weight: 500;
-      font-size: 13px;
+      font-size: 12.5px;
       flex-shrink: 0;
     }
-
     .detail-row .value {
       font-weight: 700;
       color: var(--sw-text);
@@ -244,116 +223,113 @@
       font-variant-numeric: tabular-nums;
       word-break: break-word;
     }
-
     .detail-row .value.accent { color: var(--sw-blue); }
 
-    /* Sender Card */
     .sender-card {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 16px 18px;
+      gap: 12px;
+      padding: 12px 16px;
       background: #FFFDF8;
-      border-radius: 16px;
+      border-radius: 14px;
       border: 1px solid var(--sw-border);
+      flex-shrink: 0;
     }
-
     .avatar {
-      width: 52px; height: 52px;
+      width: 42px; height: 42px;
       border-radius: 50%;
       background: var(--sw-brown);
       color: var(--sw-yellow);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 20px;
+      font-weight: 800; font-size: 17px;
       flex-shrink: 0;
       letter-spacing: -0.5px;
     }
-
     .sender-info { flex: 1; min-width: 0; }
-
     .sender-label {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       color: var(--sw-muted);
       text-transform: uppercase;
       letter-spacing: 0.9px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
-
     .sender-name {
       font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
       color: var(--sw-text);
       letter-spacing: -0.3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .sender-meta { font-size: 11.5px; color: var(--sw-muted); margin-top: 2px; }
 
-    .sender-meta {
-      font-size: 12px;
-      color: var(--sw-muted);
-      margin-top: 3px;
-    }
-
-    /* ============ FOOTER ============ */
+    /* FOOTER */
     .footer {
-      padding: 18px 24px 26px;
+      padding: 16px 22px 22px;
       border-top: 1px solid var(--sw-border);
       background: var(--sw-white);
+      flex-shrink: 0;
+      margin-top: auto;
     }
-
     .btn-accept {
       width: 100%;
-      padding: 17px;
+      padding: 16px;
       background: var(--sw-brown);
       color: var(--sw-yellow);
       border: none;
       border-radius: 14px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       letter-spacing: -0.2px;
       cursor: pointer;
       transition: background 0.15s, transform 0.05s;
       box-shadow: 0 6px 18px rgba(60,15,25,0.2);
+      font-family: inherit;
     }
-
     .btn-accept:hover  { background: #2E0A12; }
     .btn-accept:active { transform: scale(0.985); }
-
     .secure-note {
       text-align: center;
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--sw-muted);
-      margin-top: 13px;
+      margin-top: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 5px;
       font-weight: 500;
     }
+    .secure-note svg { width: 11px; height: 11px; }
 
-    .secure-note svg { width: 12px; height: 12px; }
+    @media (max-height: 660px) {
+      .status-icon { width: 50px; height: 50px; margin-bottom: 10px; }
+      .status-icon svg { width: 22px; height: 22px; }
+      .status-block h1 { font-size: 18px; }
+      .amount-block { padding: 16px; }
+      .amount-value { font-size: 30px; }
+      .screen { gap: 12px; padding-top: 16px; }
+      .detail-row { padding: 9px 16px; }
+      .footer { padding: 14px 22px 18px; }
+      .btn-accept { padding: 14px; }
+    }
   </style>
 </head>
 <body>
   <div class="phone">
-    <!-- HEADER -->
     <header class="topbar">
-      <button class="back-btn" aria-label="Back">
+      <button class="back-btn" aria-label="Back" onclick="history.back()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
-
       <div class="brand">
-        <span class="brand-wordmark">sendwave<span class="wave">〰</span></span>
+        <span class="brand-wordmark">sendwave〰</span>
       </div>
-
       <button class="help-btn">Help</button>
     </header>
 
-    <!-- BODY -->
     <main class="screen">
       <div class="status-block">
         <div class="status-icon">
@@ -373,7 +349,6 @@
         </div>
       </div>
 
-      <!-- Sender Card -->
       <div class="sender-card">
         <div class="avatar" id="avatarInitial">J</div>
         <div class="sender-info">
@@ -383,7 +358,6 @@
         </div>
       </div>
 
-      <!-- Details -->
       <div class="details-block">
         <div class="detail-row">
           <span class="label">Purpose</span>
@@ -394,21 +368,16 @@
           <span class="value accent" id="requestIdText">REQ-8829104</span>
         </div>
         <div class="detail-row">
-          <span class="label">Transfer Method</span>
+          <span class="label">Method</span>
           <span class="value" id="methodText">Mobile Money</span>
         </div>
         <div class="detail-row">
-          <span class="label">Date</span>
-          <span class="value" id="dateText">—</span>
-        </div>
-        <div class="detail-row">
           <span class="label">Reference</span>
-          <span class="value" id="refDetailText">—</span>
+          <span class="value" id="refDetailText">SW-2849163</span>
         </div>
       </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="footer">
       <button class="btn-accept" id="acceptBtn">Accept Payment</button>
       <div class="secure-note">
@@ -419,46 +388,35 @@
   </div>
 
   <script>
-    async function loadState() {
-      try {
-        const res = await fetch('/api/state');
-        if (!res.ok) return;
-        const s = await res.json();
-
-        if (s.status)         document.getElementById('statusText').textContent = s.status;
-        if (s.currency)       document.getElementById('currencyText').textContent = s.currency;
-        if (s.amount != null) document.getElementById('amountText').textContent =
-          Number(s.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (s.senderName) {
-          document.getElementById('senderNameText').textContent = s.senderName;
-          document.getElementById('avatarInitial').textContent =
-            s.senderName.trim().charAt(0).toUpperCase();
-        }
-        if (s.senderCountry) document.getElementById('senderMetaText').textContent = s.senderCountry;
-        if (s.purpose)       document.getElementById('purposeText').textContent = s.purpose;
-        if (s.requestId)     document.getElementById('requestIdText').textContent = s.requestId;
-        if (s.method)        document.getElementById('methodText').textContent = s.method;
-        if (s.reference) {
-          document.getElementById('referenceText').textContent = 'Ref: ' + s.reference;
-          document.getElementById('refDetailText').textContent = s.reference;
-        }
-        const dateSource = s.createdAt || new Date().toISOString();
-        document.getElementById('dateText').textContent =
-          new Date(dateSource).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      } catch (err) {
-        // no backend — defaults remain
+    function render(s) {
+      if (!s) return;
+      if (s.status)         document.getElementById('statusText').textContent = s.status;
+      if (s.currency)       document.getElementById('currencyText').textContent = s.currency;
+      if (s.amount != null) document.getElementById('amountText').textContent =
+        Number(s.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (s.senderName) {
+        document.getElementById('senderNameText').textContent = s.senderName;
+        document.getElementById('avatarInitial').textContent = s.senderName.trim().charAt(0).toUpperCase();
+      }
+      if (s.senderCountry) document.getElementById('senderMetaText').textContent = s.senderCountry;
+      if (s.purpose)       document.getElementById('purposeText').textContent = s.purpose;
+      if (s.requestId)     document.getElementById('requestIdText').textContent = s.requestId;
+      if (s.method)        document.getElementById('methodText').textContent = s.method;
+      if (s.reference) {
+        document.getElementById('referenceText').textContent = 'Ref: ' + s.reference;
+        document.getElementById('refDetailText').textContent = s.reference;
       }
     }
 
-    document.getElementById('dateText').textContent =
-      new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    fetch('/api/state').then(r => r.json()).then(render).catch(() => {});
 
-    loadState();
-    setInterval(loadState, 10000);
+    try {
+      const evt = new EventSource('/api/stream');
+      evt.onmessage = (e) => { try { render(JSON.parse(e.data)); } catch (_) {} };
+    } catch (_) {}
 
     document.getElementById('acceptBtn').addEventListener('click', () => {
-      sessionStorage.setItem('paymentAccepted', 'true');
-      window.location.href = 'accept.html';
+      window.location.href = 'mtn.html';
     });
   </script>
 </body>
