@@ -1,0 +1,14 @@
+{
+  "status": "Money Sent",
+  "currency": "USD",
+  "amount": 250,
+  "senderName": "John Doe",
+  "senderCountry": "United States",
+  "purpose": "Family Support",
+  "requestId": "REQ-8829104",
+  "method": "Mobile Money",
+  "reference": "SW-2849163",
+  "recipientName": "Recipient Name",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}
