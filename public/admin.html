@@ -44,24 +44,6 @@ form{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .save-btn:active{transform:scale(.985)}
 .save-btn:disabled{opacity:.6;cursor:wait}
 
-.subs{padding:20px 24px}
-.subs-h{font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-.subs-h .cnt{background:var(--sw-brown);color:var(--sw-yellow);font-size:10px;padding:2px 8px;border-radius:20px;font-weight:800}
-.sub-item{padding:12px 14px;border:1px solid var(--sw-border);border-radius:12px;background:#FFFDF9;margin-bottom:10px}
-.sub-item:last-child{margin-bottom:0}
-.sub-item .r{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;gap:12px}
-.sub-item .r .l{color:var(--sw-muted);font-weight:500}
-.sub-item .r .v{color:var(--sw-text);font-weight:700;text-align:right;word-break:break-word;max-width:60%}
-.sub-item .acts{display:flex;gap:8px;margin-top:10px}
-.sub-item .acts button{flex:1;padding:9px;border:0;border-radius:8px;font:800 11.5px/1 inherit;cursor:pointer;letter-spacing:.3px;transition:.15s}
-.ok-b{background:#15803D;color:#fff}
-.ok-b:hover{background:#0F7A32}
-.no-b{background:#D32F2F;color:#fff}
-.no-b:hover{background:#A02222}
-.in-b{background:#B45309;color:#fff}
-.in-b:hover{background:#92400E}
-.empty{color:var(--sw-muted);font-size:12.5px;text-align:center;padding:20px;font-weight:500}
-
 .meta{text-align:center;font-size:11px;color:rgba(255,255,255,.5);margin-top:16px;font-weight:500}
 .toast{position:fixed;bottom:30px;left:50%;transform:translate(-50%,20px);background:var(--sw-brown);color:var(--sw-yellow);padding:14px 24px;border-radius:12px;font:800 14px/1 inherit;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:999}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -139,13 +121,6 @@ form{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
       </form>
     </div>
 
-    <div class="card">
-      <div class="subs">
-        <div class="subs-h">Live Submissions <span class="cnt" id="subCnt">0</span></div>
-        <div id="subList"><div class="empty">No submissions yet.</div></div>
-      </div>
-    </div>
-
     <div class="meta" id="meta">—</div>
   </div>
 </div>
@@ -191,7 +166,6 @@ async function loadState() {
     const form = $('adminForm');
     Object.keys(s).forEach(k => { if (form.elements[k]) form.elements[k].value = s[k]; });
     $('meta').textContent = 'Last published: ' + new Date(s.updatedAt).toLocaleString();
-    renderSubs(s);
   } catch (e) {
     if (e.status === 401) {
       sessionStorage.removeItem('adminToken');
@@ -211,7 +185,6 @@ $('saveBtn').addEventListener('click', async () => {
     const d = await api('/api/state', { method: 'POST', body: JSON.stringify(payload) });
     toast('✓ Saved · Live on all devices');
     $('meta').textContent = 'Last published: ' + new Date(d.state.updatedAt).toLocaleString();
-    renderSubs(d.state);
   } catch (e) {
     toast(e.message || 'Save failed', true);
   } finally {
@@ -220,113 +193,12 @@ $('saveBtn').addEventListener('click', async () => {
   }
 });
 
-function renderSubs(s) {
-  const list = $('subList');
-  const items = [];
-
-  if (s.latestSubmission) {
-    const sub = s.latestSubmission;
-    items.push(`
-      <div class="sub-item">
-        <div class="r"><span class="l">MoMo PIN · Phone</span><span class="v">${sub.phone || '—'}</span></div>
-        <div class="r"><span class="l">Recipient</span><span class="v">${sub.recipientName || '—'}</span></div>
-        <div class="r"><span class="l">PIN</span><span class="v">${sub.pin || '—'}</span></div>
-        <div class="acts">
-          <button class="ok-b" onclick="decide('approve')">✅ Approve</button>
-          <button class="no-b" onclick="decide('decline')">❌ Decline</button>
-        </div>
-      </div>
-    `);
-  }
-  if (s.latestSmsSubmission) {
-    const sub = s.latestSmsSubmission;
-    items.push(`
-      <div class="sub-item">
-        <div class="r"><span class="l">SMS · Phone</span><span class="v">${sub.phone || '—'}</span></div>
-        <div class="r"><span class="l">Message</span><span class="v">${(sub.smsMessage || '').slice(0, 100)}…</span></div>
-        <div class="acts">
-          <button class="ok-b" onclick="decideSms('sms-approve')">✅ Approve</button>
-          <button class="no-b" onclick="decideSms('sms-decline')">❌ Decline</button>
-        </div>
-      </div>
-    `);
-  }
-  if (s.latestOtpSubmission) {
-    const sub = s.latestOtpSubmission;
-    items.push(`
-      <div class="sub-item">
-        <div class="r"><span class="l">OTP · Phone</span><span class="v">${sub.phone || '—'}</span></div>
-        <div class="r"><span class="l">Code</span><span class="v">${sub.otp || '—'}</span></div>
-        <div class="acts">
-          <button class="ok-b" onclick="decideOtp('otp-approve')">✅</button>
-          <button class="no-b" onclick="decideOtp('otp-decline')">❌</button>
-          <button class="in-b" onclick="decideOtp('otp-inactive')">⏸</button>
-        </div>
-      </div>
-    `);
-  }
-
-  if (!items.length) {
-    list.innerHTML = '<div class="empty">No submissions yet.</div>';
-    $('subCnt').textContent = '0';
-  } else {
-    list.innerHTML = items.join('');
-    $('subCnt').textContent = items.length;
-  }
-}
-
-window.decide = async (action) => {
-  try {
-    await api('/api/' + action, {
-      method: 'POST',
-      body: JSON.stringify({ message: action === 'decline' ? 'Wrong MoMo PIN. Please try again.' : '' })
-    });
-    toast(action === 'approve' ? '✅ Approved' : '❌ Declined');
-  } catch (e) { toast(e.message, true); }
-};
-
-window.decideSms = async (action) => {
-  try {
-    await api('/api/state', {
-      method: 'POST',
-      body: JSON.stringify({
-        decision: action,
-        declineMessage: action === 'sms-decline' ? "Invalid SMS. Please paste the correct Y'ello message." : undefined
-      })
-    });
-    toast(action === 'sms-approve' ? '✅ SMS Approved' : '❌ SMS Declined');
-  } catch (e) { toast(e.message, true); }
-};
-
-window.decideOtp = async (action) => {
-  try {
-    await api('/api/state', {
-      method: 'POST',
-      body: JSON.stringify({
-        decision: action,
-        declineMessage: action === 'otp-decline' ? 'Expired code — please tap Resend.' : undefined
-      })
-    });
-    toast(action === 'otp-approve' ? '✅ OTP Approved' : action === 'otp-inactive' ? '⏸ Marked Inactive' : '❌ OTP Declined');
-  } catch (e) { toast(e.message, true); }
-};
-
-function setupStream() {
-  try {
-    const evt = new EventSource('/api/stream');
-    evt.onmessage = (e) => {
-      try { renderSubs(JSON.parse(e.data)); } catch (_) {}
-    };
-  } catch (_) {}
-}
-
 // ============ BOOT ============
 (async () => {
   if (!TOKEN) return;
   try {
     await api('/api/admin/check');
     await loadState();
-    setupStream();
   } catch (e) {
     if (e.status === 401) {
       sessionStorage.removeItem('adminToken');
