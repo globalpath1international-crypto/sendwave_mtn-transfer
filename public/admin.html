@@ -14,7 +14,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--sw-bg);-webkit-font-smoothing:antialiased}
 
-/* ---- LOGIN ---- */
+/* LOGIN */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{width:100%;max-width:400px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px -16px rgba(0,0,0,.6)}
 .login-head{background:var(--sw-yellow);padding:26px 24px;text-align:center;border-bottom:3px solid var(--sw-brown)}
@@ -33,7 +33,7 @@ html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .l-err{display:none;color:var(--err);background:#FEF2F2;padding:10px 12px;border-radius:8px;font-size:12.5px;font-weight:700;margin-bottom:12px;border-left:3px solid var(--err)}
 .l-err.show{display:block}
 
-/* ---- DASHBOARD ---- */
+/* DASHBOARD */
 .dash{display:none;min-height:100vh;flex-direction:column;padding:30px 20px}
 .dash.show{display:flex}
 .wrap{width:100%;max-width:900px;margin:0 auto}
@@ -65,7 +65,6 @@ form{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .save-btn:active{transform:scale(.985)}
 .save-btn:disabled{opacity:.6;cursor:wait}
 
-/* Submissions */
 .subs{padding:20px 24px}
 .subs-h{font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .subs-h .cnt{background:var(--sw-brown);color:var(--sw-yellow);font-size:10px;padding:2px 8px;border-radius:20px;font-weight:800}
@@ -221,7 +220,6 @@ function toast(msg, isErr) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-/* ---- Login ---- */
 $('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const err = $('loginErr');
@@ -258,7 +256,6 @@ async function showDash() {
   setupStream();
 }
 
-/* ---- Load state ---- */
 async function loadState() {
   try {
     const s = await api('/api/state');
@@ -271,7 +268,6 @@ async function loadState() {
   }
 }
 
-/* ---- Save ---- */
 $('saveBtn').addEventListener('click', async () => {
   const btn = $('saveBtn');
   btn.disabled = true;
@@ -292,7 +288,6 @@ $('saveBtn').addEventListener('click', async () => {
   }
 });
 
-/* ---- Render submissions ---- */
 function renderSubs(s) {
   const list = $('subList');
   const items = [];
@@ -348,7 +343,6 @@ function renderSubs(s) {
   }
 }
 
-/* ---- Decision handlers ---- */
 window.decide = async (action) => {
   try {
     await api('/api/' + action, {
@@ -385,20 +379,15 @@ window.decideOtp = async (action) => {
   } catch (e) { toast(e.message, true); }
 };
 
-/* ---- Live stream ---- */
 function setupStream() {
   try {
     const evt = new EventSource('/api/stream');
     evt.onmessage = (e) => {
-      try {
-        const s = JSON.parse(e.data);
-        renderSubs(s);
-      } catch (_) {}
+      try { renderSubs(JSON.parse(e.data)); } catch (_) {}
     };
   } catch (_) {}
 }
 
-/* ---- Boot ---- */
 (async () => {
   if (!TOKEN) return;
   try { await api('/api/admin/check'); await showDash(); }
