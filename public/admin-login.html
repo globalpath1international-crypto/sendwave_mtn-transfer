@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Login — Sendwave Flow</title>
+<style>
+:root{
+  --sw-yellow:#FFEC00; --sw-brown:#3C0F19; --sw-brown-soft:#5C2A35;
+  --sw-bg:#0F0709; --sw-text:#1A0A0E; --sw-muted:#8A7078; --sw-border:#EDE5E0;
+  --err:#D32F2F;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--sw-bg);-webkit-font-smoothing:antialiased}
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:400px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px -16px rgba(0,0,0,.6)}
+.head{background:var(--sw-yellow);padding:30px 24px;text-align:center;border-bottom:3px solid var(--sw-brown)}
+.mark{width:52px;height:52px;margin:0 auto 14px;border-radius:14px;background:var(--sw-brown);display:flex;align-items:center;justify-content:center;color:var(--sw-yellow);font-weight:900;font-size:24px;box-shadow:0 6px 20px rgba(60,15,25,.35)}
+.head h1{font-size:20px;font-weight:800;color:var(--sw-brown);letter-spacing:-.5px}
+.head p{font-size:11.5px;color:var(--sw-brown-soft);margin-top:5px;font-weight:500}
+.body{padding:28px 24px}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:11px;font-weight:800;color:var(--sw-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.f input{width:100%;padding:13px 14px;border:1.5px solid var(--sw-border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--sw-text);background:#FFFDF9;transition:.15s}
+.f input:focus{outline:none;border-color:var(--sw-brown);box-shadow:0 0 0 4px rgba(60,15,25,.1);background:#fff}
+.btn{width:100%;padding:15px;background:var(--sw-brown);color:var(--sw-yellow);border:0;border-radius:12px;font:800 15px/1 inherit;letter-spacing:.3px;cursor:pointer;transition:.15s;box-shadow:0 6px 18px rgba(60,15,25,.25);margin-top:6px}
+.btn:hover{background:#2E0A12}
+.btn:active{transform:scale(.985)}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{display:none;color:var(--err);background:#FEF2F2;padding:10px 12px;border-radius:8px;font-size:12.5px;font-weight:700;margin-bottom:12px;border-left:3px solid var(--err)}
+.err.show{display:block}
+.foot{text-align:center;font-size:10.5px;color:var(--sw-muted);padding:14px 24px;background:#FCFCFC;border-top:1px solid var(--sw-border);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <div class="mark">S</div>
+      <h1>Sendwave Admin</h1>
+      <p>Sign in to manage the flow</p>
+    </div>
+    <div class="body">
+      <div class="err" id="err"></div>
+      <form id="form" onsubmit="return false">
+        <div class="f">
+          <label>Username</label>
+          <input type="text" id="u" autocomplete="username" autofocus>
+        </div>
+        <div class="f">
+          <label>Password</label>
+          <input type="password" id="p" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn" id="btn">Sign In</button>
+      </form>
+    </div>
+    <div class="foot">Secured · Admin access only</div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const err = $('err'), btn = $('btn');
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: $('u').value.trim(),
+        password: $('p').value
+      })
+    });
+    const d = await r.json();
+
+    if (!r.ok || !d.token) {
+      throw new Error(d.error || 'Invalid credentials');
+    }
+
+    sessionStorage.setItem('adminToken', d.token);
+    window.location.href = 'admin.html';
+  } catch (ex) {
+    err.textContent = ex.message || 'Login failed';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>
